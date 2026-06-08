@@ -372,7 +372,11 @@ static const char *cs_branch_types[] = {"if_statement",    "for_statement",    "
                                         "try_statement",   "catch_clause",     NULL};
 static const char *cs_var_types[] = {"field_declaration", "local_declaration_statement", NULL};
 static const char *cs_field_types[] = {"field_declaration", "property_declaration", NULL};
-static const char *cs_assign_types[] = {"assignment_expression", "update_expression", NULL};
+/* tree-sitter-c-sharp models `x++`/`++x` as postfix_/prefix_unary_expression
+ * (there is no `update_expression` node — that is a JS/TS kind), so a static
+ * field bump like `_count++` must list those node kinds to emit a WRITES. */
+static const char *cs_assign_types[] = {"assignment_expression", "postfix_unary_expression",
+                                        "prefix_unary_expression", NULL};
 static const char *cs_throw_types[] = {"throw_statement", "throw_expression", NULL};
 static const char *cs_decorator_types[] = {"attribute", NULL};
 

@@ -123,6 +123,19 @@ static const char *java_keywords[] = {
     "Float",     "Boolean",      "Object",      "List",       "Map",     "Set",        "Optional",
     "Stream",    "Arrays",       "Collections", NULL};
 
+/* Kotlin hard keywords (those reserved everywhere). Kotlin does NOT reserve
+ * primitive type names — `double`, `int`, `float`, `boolean` are ordinary
+ * identifiers (the types are `Double`, `Int`, …), so a function named
+ * `fun double()` is legal and must NOT be filtered as a keyword the way the
+ * Java list (which lists Java primitives) would.  Soft/modifier keywords
+ * (`data`, `open`, `sealed`, `suspend`, …) are context-sensitive and usable as
+ * identifiers, so they are intentionally omitted. */
+static const char *kotlin_keywords[] = {
+    "as",    "break",  "class", "continue",  "do",     "else",  "false", "for",
+    "fun",   "if",     "in",    "interface", "is",     "null",  "object", "package",
+    "return", "super", "this",  "throw",     "true",   "try",   "typealias", "typeof",
+    "val",   "var",    "when",  "while",     NULL};
+
 static const char *generic_keywords[] = {
     "true",     "false",     "null",      "nil",    "None",   "undefined", "void",    "if",
     "else",     "for",       "while",     "do",     "switch", "case",      "default", "break",
@@ -155,9 +168,11 @@ bool cbm_is_keyword(const char *name, CBMLanguage lang) {
         keywords = rust_keywords;
         break;
     case CBM_LANG_JAVA:
-    case CBM_LANG_KOTLIN:
     case CBM_LANG_SCALA:
         keywords = java_keywords;
+        break;
+    case CBM_LANG_KOTLIN:
+        keywords = kotlin_keywords;
         break;
     default:
         keywords = generic_keywords;

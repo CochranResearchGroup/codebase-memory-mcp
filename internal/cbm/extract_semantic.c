@@ -191,14 +191,62 @@ static char *resolve_lhs_write_name(CBMExtractCtx *ctx, TSNode left) {
     return NULL;
 }
 
+// Resolve the write target of a node in an assignment_node_types set.  For a
+// plain assignment the target is the "left" field (or first child).  For an
+// increment/decrement unary expression (`x++`, `++x`, C#
+// postfix_/prefix_unary_expression) there is no "left" field and the operand
+// may sit on either side of the operator token, so scan named children for the
+// first identifier / member-style operand.  Returns a null node when no simple
+// target is found.
+static TSNode resolve_write_lhs_node(TSNode node) {
+    TSNode left = ts_node_child_by_field_name(node, TS_FIELD("left"));
+    if (!ts_node_is_null(left)) {
+        return left;
+    }
+    const char *nk = ts_node_type(node);
+    if (strcmp(nk, "postfix_unary_expression") == 0 ||
+        strcmp(nk, "prefix_unary_expression") == 0 || strcmp(nk, "update_expression") == 0) {
+        // Only ++/-- mutate their operand. Other unary postfix/prefix forms
+        // (C# null-forgiving `x!`, address-of `&x`, deref `*x`, logical `!x`)
+        // READ the operand — never treat them as writes.
+        bool is_incdec = false;
+        uint32_t total = ts_node_child_count(node);
+        for (uint32_t i = 0; i < total; i++) {
+            TSNode c = ts_node_child(node, i);
+            if (ts_node_is_named(c)) {
+                continue; // operator is an anonymous token
+            }
+            const char *op = ts_node_type(c);
+            if (strcmp(op, "++") == 0 || strcmp(op, "--") == 0) {
+                is_incdec = true;
+                break;
+            }
+        }
+        if (!is_incdec) {
+            return (TSNode){0};
+        }
+        uint32_t cnc = ts_node_named_child_count(node);
+        for (uint32_t i = 0; i < cnc; i++) {
+            TSNode c = ts_node_named_child(node, i);
+            const char *ck = ts_node_type(c);
+            if (strcmp(ck, "identifier") == 0 || strcmp(ck, "simple_identifier") == 0 ||
+                strcmp(ck, "member_access_expression") == 0 || strcmp(ck, "field_expression") == 0 ||
+                strcmp(ck, "field_access") == 0 || strcmp(ck, "selector_expression") == 0 ||
+                strcmp(ck, "subscript_expression") == 0 || strcmp(ck, "index_expression") == 0) {
+                return c;
+            }
+        }
+        return (TSNode){0};
+    }
+    if (ts_node_child_count(node) > 0) {
+        return ts_node_child(node, 0);
+    }
+    return (TSNode){0};
+}
+
 // Try to emit a write for an assignment node.
 static void try_emit_assignment_write(CBMExtractCtx *ctx, TSNode node, const char *func_qn) {
-    TSNode left = ts_node_child_by_field_name(node, TS_FIELD("left"));
-    if (ts_node_is_null(left)) {
-        if (ts_node_child_count(node) > 0) {
-            left = ts_node_child(node, 0);
-        }
-    }
+    TSNode left = resolve_write_lhs_node(node);
     if (ts_node_is_null(left)) {
         return;
     }
@@ -277,12 +325,7 @@ void handle_readwrites(CBMExtractCtx *ctx, TSNode node, const CBMLangSpec *spec,
     }
 
     if (cbm_kind_in_set(node, spec->assignment_node_types)) {
-        TSNode left = ts_node_child_by_field_name(node, TS_FIELD("left"));
-        if (ts_node_is_null(left)) {
-            if (ts_node_child_count(node) > 0) {
-                left = ts_node_child(node, 0);
-            }
-        }
+        TSNode left = resolve_write_lhs_node(node);
 
         if (!ts_node_is_null(left)) {
             char *name = resolve_lhs_write_name(ctx, left);

@@ -52,6 +52,7 @@
 #include "scope.h"
 #include "type_registry.h"
 #include "../cbm.h"
+#include "go_lsp.h" /* CBMLSPDef, CBMResolvedCallArray reused across languages */
 
 /* Use-kind for `import a.b.c.foo` — tracks whether the import refers to a
  * type, a function/extension, a property, or an object. Determines how
@@ -156,6 +157,16 @@ const CBMType *kotlin_lookup_property_type(KotlinLSPContext *ctx, const char *cl
  * extracted. */
 void cbm_run_kotlin_lsp(CBMArena *arena, CBMFileResult *result, const char *source,
                         int source_len, TSNode root);
+
+/* Cross-file LSP: build a registry from project-wide defs (local + cross-file)
+ * + stdlib, re-parse the source if no cached tree, walk and resolve calls.
+ * Mirrors cbm_run_java_lsp_cross. `defs` carries the graph QNs of every
+ * project definition so a bare top-level call in file B resolves to the
+ * definition node living in file A. Output is appended to `out`. */
+void cbm_run_kotlin_lsp_cross(CBMArena *arena, const char *source, int source_len,
+                              const char *module_qn, CBMLSPDef *defs, int def_count,
+                              const char **import_names, const char **import_qns, int import_count,
+                              TSTree *cached_tree, CBMResolvedCallArray *out);
 
 /* Register the curated Kotlin stdlib (kotlin.*, kotlin.collections.*, …)
  * into a registry. Implemented in lsp/generated/kotlin_stdlib_data.c. */

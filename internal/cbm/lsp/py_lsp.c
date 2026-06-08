@@ -1940,7 +1940,13 @@ static const char* py_binop_dunder(const char* op_text) {
 
 /* If `recv` is a user-defined NAMED type that defines `dunder`, emit a CALLS
  * edge to that dunder method (operator-overload / subscript desugaring).  This
- * models `a + b` → T.__add__ and `s[k]` → T.__getitem__ as calls. */
+ * models `a + b` → T.__add__ and `s[k]` → T.__getitem__ as calls.
+ *
+ * Requires a typed receiver.  An UNTYPED receiver (e.g. the unannotated
+ * parameter in `def run(s): return s[0]`) is intentionally left unresolved:
+ * guessing the sole class that declares the dunder would mis-resolve ordinary
+ * built-in subscripts/operators (`some_list[0]`, `a + b` on ints) onto an
+ * unrelated user class, so we only resolve when the receiver type is known. */
 static void py_emit_dunder_call(PyLSPContext* ctx, const CBMType* recv, const char* dunder) {
     if (!recv || recv->kind != CBM_TYPE_NAMED || !dunder) return;
     const CBMRegisteredFunc* f =

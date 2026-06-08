@@ -623,7 +623,44 @@ const char *kotlin_resolve_function_name(KotlinLSPContext *ctx, const char *name
     }
 
     /* Default imports */
-    return kt_resolve_in_default_imports(ctx, name, CBM_KT_USE_FUNCTION);
+    const char *via_default = kt_resolve_in_default_imports(ctx, name, CBM_KT_USE_FUNCTION);
+    if (via_default) {
+        return via_default;
+    }
+
+    /* Cross-file sole-definer fallback. In the default package (no `package`
+     * declaration) a top-level `double()` in Util.kt is callable bare from
+     * Main.kt, but its registered QN embeds the defining file's path
+     * ("<project>.Util.double") which the caller can't reconstruct.  When the
+     * project-wide registry holds EXACTLY ONE top-level function (receiver_type
+     * == NULL) whose short name matches, resolve to it.  Bounded to a single
+     * candidate so an ambiguous name (>1 definer) is left unresolved — sound,
+     * mirroring the registry's "unique_name" strategy.  Runs only after the
+     * package/import/bare/default-import lookups miss, so it never overrides a
+     * more specific match; in the per-file pass the registry holds just this
+     * file's defs, so the candidate is the file's own sole top-level fun. */
+    if (ctx->registry && ctx->registry->funcs) {
+        const char *only_qn = NULL;
+        int matches = 0;
+        for (int i = 0; i < ctx->registry->func_count && matches < 2; i++) {
+            const CBMRegisteredFunc *f = &ctx->registry->funcs[i];
+            if (!f->qualified_name || !f->short_name) {
+                continue;
+            }
+            if (f->receiver_type) { /* method / extension — not a bare top-level fun */
+                continue;
+            }
+            if (strcmp(f->short_name, name) == 0) {
+                only_qn = f->qualified_name;
+                matches++;
+            }
+        }
+        if (matches == 1 && only_qn) {
+            return cbm_arena_strdup(ctx->arena, only_qn);
+        }
+    }
+
+    return NULL;
 }
 
 static const char *kt_resolve_in_default_imports(KotlinLSPContext *ctx, const char *name,
@@ -4049,5 +4086,132 @@ void cbm_run_kotlin_lsp(CBMArena *arena, CBMFileResult *result, const char *sour
 
     if (patched_tree) {
         ts_tree_delete(patched_tree);
+    }
+}
+
+/* ── Cross-file LSP ───────────────────────────────────────────────── */
+
+/* Register one cross-file definition into the registry under its graph QN so
+ * a call site in another file resolves to the right node. Types and functions
+ * keep their full project-qualified QN; functions carry receiver_type so the
+ * sole-definer fallback can tell a top-level fun from a method. */
+static void kt_register_cross_def(CBMTypeRegistry *reg, CBMArena *arena, const CBMLSPDef *d) {
+    if (!d->qualified_name || !d->short_name || !d->label) {
+        return;
+    }
+    if (strcmp(d->label, "Class") == 0 || strcmp(d->label, "Interface") == 0 ||
+        strcmp(d->label, "Enum") == 0 || strcmp(d->label, "Type") == 0) {
+        CBMRegisteredType rt;
+        memset(&rt, 0, sizeof(rt));
+        rt.qualified_name = d->qualified_name;
+        rt.short_name = d->short_name;
+        rt.is_interface = (strcmp(d->label, "Interface") == 0) || d->is_interface;
+        if (d->embedded_types && d->embedded_types[0]) {
+            int n = 1;
+            for (const char *p = d->embedded_types; *p; p++) {
+                if (*p == '|') {
+                    n++;
+                }
+            }
+            const char **emb = (const char **)cbm_arena_alloc(arena, (size_t)(n + 1) * sizeof(*emb));
+            int idx = 0;
+            const char *start = d->embedded_types;
+            while (*start) {
+                const char *end = start;
+                while (*end && *end != '|') {
+                    end++;
+                }
+                if (end > start) {
+                    emb[idx++] = cbm_arena_strndup(arena, start, (size_t)(end - start));
+                }
+                if (!*end) {
+                    break;
+                }
+                start = end + 1;
+            }
+            emb[idx] = NULL;
+            rt.embedded_types = emb;
+        }
+        cbm_registry_add_type(reg, rt);
+    } else if (strcmp(d->label, "Method") == 0 || strcmp(d->label, "Function") == 0 ||
+               strcmp(d->label, "Constructor") == 0) {
+        CBMRegisteredFunc rf;
+        memset(&rf, 0, sizeof(rf));
+        rf.qualified_name = d->qualified_name;
+        rf.short_name = d->short_name;
+        rf.min_params = -1;
+        /* receiver_type distinguishes a top-level fun (NULL) from a method
+         * (set) — the sole-definer fallback only matches top-level funs. */
+        rf.receiver_type = d->receiver_type;
+        cbm_registry_add_func(reg, rf);
+    }
+}
+
+void cbm_run_kotlin_lsp_cross(CBMArena *arena, const char *source, int source_len,
+                              const char *module_qn, CBMLSPDef *defs, int def_count,
+                              const char **import_names, const char **import_qns, int import_count,
+                              TSTree *cached_tree, CBMResolvedCallArray *out) {
+    if (!arena || !source) {
+        return;
+    }
+
+    CBMTypeRegistry reg;
+    cbm_registry_init(&reg, arena);
+    cbm_kotlin_stdlib_register(&reg, arena);
+
+    /* Register project-wide defs (local + cross-file) under their graph QNs. */
+    for (int i = 0; i < def_count; i++) {
+        kt_register_cross_def(&reg, arena, &defs[i]);
+    }
+
+    /* Parse the source if the pipeline didn't hand us a cached tree. */
+    TSTree *tree = cached_tree;
+    bool owns_tree = false;
+    if (!tree) {
+        TSParser *parser = ts_parser_new();
+        if (!parser) {
+            return;
+        }
+        ts_parser_set_language(parser, tree_sitter_kotlin());
+        tree = ts_parser_parse_string(parser, NULL, source, (uint32_t)source_len);
+        ts_parser_delete(parser);
+        owns_tree = true;
+    }
+    if (!tree) {
+        return;
+    }
+    TSNode root = ts_tree_root_node(tree);
+
+    /* project_name prefix (everything before the first dot of module_qn). */
+    const char *project_name = "";
+    const char *first_dot = module_qn ? strchr(module_qn, '.') : NULL;
+    if (first_dot) {
+        size_t pl = (size_t)(first_dot - module_qn);
+        char *pn = (char *)cbm_arena_alloc(arena, pl + 1);
+        if (pn) {
+            memcpy(pn, module_qn, pl);
+            pn[pl] = '\0';
+            project_name = pn;
+        }
+    } else if (module_qn) {
+        project_name = module_qn;
+    }
+
+    KotlinLSPContext ctx;
+    kotlin_lsp_init(&ctx, arena, source, source_len, &reg, "", module_qn ? module_qn : "",
+                    project_name, /*rel_path=*/NULL, out);
+
+    /* Apply caller-supplied imports (resolved IMPORTS edges). */
+    for (int i = 0; i < import_count; i++) {
+        if (!import_names || !import_qns || !import_names[i] || !import_qns[i]) {
+            continue;
+        }
+        kotlin_lsp_add_import(&ctx, import_names[i], import_qns[i], CBM_KT_USE_UNKNOWN);
+    }
+
+    kotlin_lsp_process_file(&ctx, root);
+
+    if (owns_tree) {
+        ts_tree_delete(tree);
     }
 }
