@@ -26,10 +26,21 @@ TS_INCLUDE = $(CBM_DIR)/vendored/ts_runtime/include
 TS_SRC = $(CBM_DIR)/vendored/ts_runtime/src
 
 # ── Optional libgit2 (faster git history parsing) ────────────────
-# Auto-detected via pkg-config. Falls back to popen("git log ...") if absent.
+# Auto-detected via pkg-config. Falls back to popen("git log ...") if absent
+# or if the installed headers do not expose the allocator API this build uses.
 LIBGIT2_CFLAGS := $(shell pkg-config --cflags libgit2 2>/dev/null)
 LIBGIT2_LIBS := $(shell pkg-config --libs libgit2 2>/dev/null)
-ifneq ($(LIBGIT2_LIBS),)
+LIBGIT2_ALLOCATOR_OK := $(shell \
+	if [ -n "$(LIBGIT2_LIBS)" ]; then \
+		tmp="/tmp/cbm-libgit2-probe-$$$$.o"; \
+		printf '%s\n' '#include <git2.h>' 'int main(void) { git_allocator a; (void)a; return 0; }' \
+			| $(CC) $(LIBGIT2_CFLAGS) -x c - -c -o "$$tmp" >/dev/null 2>&1 \
+			&& echo yes || echo no; \
+		rm -f "$$tmp"; \
+	else \
+		echo no; \
+	fi)
+ifeq ($(LIBGIT2_ALLOCATOR_OK),yes)
 LIBGIT2_FLAGS = -DHAVE_LIBGIT2 $(LIBGIT2_CFLAGS)
 else
 LIBGIT2_FLAGS =
@@ -285,7 +296,7 @@ EXISTING_C_SRCS = $(EXTRACTION_SRCS) $(LSP_SRCS) $(TS_RUNTIME_SRC) \
 # ── Test sources ─────────────────────────────────────────────────
 
 TEST_FOUNDATION_SRCS = \
-    tests/test_main.c \
+    tests/test_foundation_main.c \
     tests/test_arena.c \
     tests/test_hash_table.c \
     tests/test_dyn_array.c \
@@ -401,6 +412,8 @@ GRAMMAR_CFLAGS_TSAN = -std=c11 -D_DEFAULT_SOURCE -g -O1 -w -I$(CBM_DIR) -I$(TS_I
 
 # Object files for grammars + ts_runtime + lsp_all + preprocessor
 GRAMMAR_OBJS_TEST = $(patsubst $(CBM_DIR)/%.c,$(BUILD_DIR)/%.o,$(GRAMMAR_SRCS))
+MIMALLOC_OBJ_TEST = $(BUILD_DIR)/mimalloc.o
+MIMALLOC_OBJ_PROD = $(BUILD_DIR)/prod_mimalloc.o
 TS_RUNTIME_OBJ_TEST = $(BUILD_DIR)/ts_runtime.o
 LSP_OBJ_TEST = $(BUILD_DIR)/lsp_all.o
 PP_OBJ_TEST = $(BUILD_DIR)/preprocessor.o
@@ -414,8 +427,10 @@ $(BUILD_DIR):
 
 # ── Foundation-only test (fast, no extraction) ───────────────────
 
-$(BUILD_DIR)/test-foundation: $(TEST_FOUNDATION_SRCS) $(FOUNDATION_SRCS) | $(BUILD_DIR)
-	$(CC) $(CFLAGS_TEST) -o $@ $(TEST_FOUNDATION_SRCS) $(FOUNDATION_SRCS) $(LDFLAGS_TEST)
+$(BUILD_DIR)/test-foundation: $(TEST_FOUNDATION_SRCS) $(FOUNDATION_SRCS) $(MIMALLOC_OBJ_TEST) $(TS_RUNTIME_OBJ_TEST) | $(BUILD_DIR)
+	$(CC) $(CFLAGS_TEST) -o $@ $(TEST_FOUNDATION_SRCS) $(FOUNDATION_SRCS) \
+		$(MIMALLOC_OBJ_TEST) $(TS_RUNTIME_OBJ_TEST) \
+		$(LDFLAGS_TEST)
 
 test-foundation: $(BUILD_DIR)/test-foundation
 	cd $(CURDIR) && $(BUILD_DIR)/test-foundation
@@ -435,10 +450,6 @@ $(BUILD_DIR)/preprocessor.o: $(CBM_DIR)/preprocessor.cpp | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS_TEST) -w -I$(CBM_DIR)/vendored -c -o $@ $<
 
 # ── Full test binary ─────────────────────────────────────────────
-
-# mimalloc object files
-MIMALLOC_OBJ_TEST = $(BUILD_DIR)/mimalloc.o
-MIMALLOC_OBJ_PROD = $(BUILD_DIR)/prod_mimalloc.o
 
 $(BUILD_DIR)/mimalloc.o: $(MIMALLOC_SRC) | $(BUILD_DIR)
 	$(CC) $(MIMALLOC_CFLAGS_TEST) -c -o $@ $<

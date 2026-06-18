@@ -2769,7 +2769,7 @@ static int cbm_kill_other_instances(void) {
 #else
     int killed = 0;
     pid_t self = getpid();
-    FILE *fp = cbm_popen("pgrep -x codebase-memory-mcp", "r");
+    FILE *fp = cbm_popen("pgrep -f '^([^[:space:]]*/)?codebase-memory-mcp([[:space:]]|$)'", "r");
     if (!fp) {
         return 0;
     }
@@ -2788,7 +2788,7 @@ static int cbm_kill_other_instances(void) {
 }
 
 /* Download checksums.txt and verify the archive integrity.
- * Returns: 0 = verified OK, 1 = mismatch (FAIL), -1 = could not verify (warning). */
+ * Returns: 0 = verified OK, non-zero = verification failed. */
 static int verify_download_checksum(const char *archive_path, const char *archive_name) {
     char checksum_file[CLI_BUF_256];
     snprintf(checksum_file, sizeof(checksum_file), "%s/cbm-checksums.txt", cbm_tmpdir());
@@ -2806,24 +2806,27 @@ static int verify_download_checksum(const char *archive_path, const char *archiv
     }
     int rc = cbm_download_to_file_quiet(checksum_url, checksum_file);
     if (rc != 0) {
-        (void)fprintf(stderr,
-                      "warning: could not download checksums.txt — skipping verification\n");
+        (void)fprintf(stderr, "error: could not download checksums.txt; refusing unchecked update\n");
         cbm_unlink(checksum_file);
-        return CLI_ERR;
+        return CLI_TRUE;
     }
 
     FILE *fp = fopen(checksum_file, "r");
     cbm_unlink(checksum_file);
     if (!fp) {
-        return CLI_ERR;
+        return CLI_TRUE;
     }
 
     char expected[SHA256_BUF_SIZE] = {0};
     char line[CLI_BUF_512];
     while (fgets(line, sizeof(line), fp)) {
         /* Format: <CBM_SZ_64-char sha256>  <filename>\n */
-        if (strlen(line) > CHECKSUM_LINE_MIN && strstr(line, archive_name)) {
-            memcpy(expected, line, SHA256_HEX_LEN);
+        char line_hash[SHA256_BUF_SIZE] = {0};
+        char line_name[CLI_BUF_256] = {0};
+        if (strlen(line) > CHECKSUM_LINE_MIN &&
+            sscanf(line, "%64s %255s", line_hash, line_name) == 2 &&
+            strcmp(line_name, archive_name) == 0) {
+            memcpy(expected, line_hash, SHA256_HEX_LEN);
             expected[SHA256_HEX_LEN] = '\0';
             break;
         }
@@ -2831,14 +2834,14 @@ static int verify_download_checksum(const char *archive_path, const char *archiv
     (void)fclose(fp);
 
     if (expected[0] == '\0') {
-        (void)fprintf(stderr, "warning: %s not found in checksums.txt\n", archive_name);
-        return CLI_ERR;
+        (void)fprintf(stderr, "error: %s not found in checksums.txt\n", archive_name);
+        return CLI_TRUE;
     }
 
     char actual[SHA256_BUF_SIZE] = {0};
     if (sha256_file(archive_path, actual, sizeof(actual)) != 0) {
-        (void)fprintf(stderr, "warning: sha256sum/shasum not available — skipping verification\n");
-        return CLI_ERR;
+        (void)fprintf(stderr, "error: sha256sum/shasum required to verify download\n");
+        return CLI_TRUE;
     }
 
     if (strcmp(expected, actual) != 0) {
@@ -3811,7 +3814,7 @@ static int download_verify_install(const char *url, const char *ext, const char 
     snprintf(archive_name, sizeof(archive_name), "codebase-memory-mcp-%s%s-%s%s.%s",
              want_ui ? "ui-" : "", os, arch, portable, ext);
     int crc = verify_download_checksum(tmp_archive, archive_name);
-    if (crc == CLI_TRUE) {
+    if (crc != 0) {
         cbm_unlink(tmp_archive);
         return CLI_TRUE;
     }

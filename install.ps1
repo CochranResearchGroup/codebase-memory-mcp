@@ -62,21 +62,29 @@ try {
 $ChecksumUrl = "$BaseUrl/checksums.txt"
 try {
     Invoke-WebRequest -Uri $ChecksumUrl -OutFile "$TmpDir\checksums.txt" -UseBasicParsing
-    $checksumLine = Get-Content "$TmpDir\checksums.txt" | Where-Object { $_ -like "*$Archive*" }
-    if ($checksumLine) {
-        $expected = ($checksumLine -split '\s+')[0]
-        $actual = (Get-FileHash -Path "$TmpDir\$Archive" -Algorithm SHA256).Hash.ToLower()
-        if ($expected -ne $actual) {
-            Write-Host "error: CHECKSUM MISMATCH!" -ForegroundColor Red
-            Write-Host "  expected: $expected"
-            Write-Host "  actual:   $actual"
-            Remove-Item -Recurse -Force $TmpDir
-            exit 1
-        }
-        Write-Host "Checksum verified."
+    $checksumLine = Get-Content "$TmpDir\checksums.txt" | Where-Object {
+        $parts = $_ -split '\s+'
+        $parts.Length -ge 2 -and $parts[1] -eq $Archive
+    } | Select-Object -First 1
+    if (-not $checksumLine) {
+        Write-Host "error: $Archive not found in checksums.txt; refusing unchecked install" -ForegroundColor Red
+        Remove-Item -Recurse -Force $TmpDir
+        exit 1
     }
+    $expected = ($checksumLine -split '\s+')[0].ToLower()
+    $actual = (Get-FileHash -Path "$TmpDir\$Archive" -Algorithm SHA256).Hash.ToLower()
+    if ($expected -ne $actual) {
+        Write-Host "error: CHECKSUM MISMATCH!" -ForegroundColor Red
+        Write-Host "  expected: $expected"
+        Write-Host "  actual:   $actual"
+        Remove-Item -Recurse -Force $TmpDir
+        exit 1
+    }
+    Write-Host "Checksum verified."
 } catch {
-    Write-Host "warning: could not verify checksum (non-fatal)"
+    Write-Host "error: could not verify checksum; refusing unchecked install: $_" -ForegroundColor Red
+    Remove-Item -Recurse -Force $TmpDir -ErrorAction SilentlyContinue
+    exit 1
 }
 
 # Extract
