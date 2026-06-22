@@ -56,6 +56,7 @@ enum {
 #include "foundation/str_util.h"
 #include "foundation/compat_regex.h"
 #include "pipeline/artifact.h"
+#include "workspace_index/workspace_index.h"
 
 #ifdef _WIN32
 #include <process.h>
@@ -632,6 +633,8 @@ struct cbm_mcp_server {
     struct cbm_config *config;        /* external config ref (not owned) */
     cbm_thread_t autoindex_tid;
     bool autoindex_active; /* true if auto-index thread was started */
+    cbm_thread_t workspace_autoindex_tid;
+    bool workspace_autoindex_active; /* true if workspace auto-index thread was started */
 
     /* Active pipeline tracking for cancellation support */
     cbm_pipeline_t *active_pipeline; /* non-NULL while index_repository runs */
@@ -690,6 +693,9 @@ void cbm_mcp_server_free(cbm_mcp_server_t *srv) {
     }
     if (srv->autoindex_active) {
         cbm_thread_join(&srv->autoindex_tid);
+    }
+    if (srv->workspace_autoindex_active) {
+        cbm_thread_join(&srv->workspace_autoindex_tid);
     }
     if (srv->owns_store && srv->store) {
         cbm_store_close(srv->store);
@@ -4358,6 +4364,24 @@ static void maybe_auto_index(cbm_mcp_server_t *srv) {
     }
 }
 
+static void *workspace_autoindex_thread(void *arg) {
+    cbm_mcp_server_t *srv = (cbm_mcp_server_t *)arg;
+    cbm_workspace_auto_index_from_config(srv->config, srv->watcher);
+    return NULL;
+}
+
+static void maybe_workspace_auto_index(cbm_mcp_server_t *srv) {
+    if (!srv || !srv->config) {
+        return;
+    }
+    if (!cbm_config_get_bool(srv->config, CBM_CONFIG_WORKSPACE_AUTO_INDEX, false)) {
+        return;
+    }
+    if (cbm_thread_create(&srv->workspace_autoindex_tid, 0, workspace_autoindex_thread, srv) == 0) {
+        srv->workspace_autoindex_active = true;
+    }
+}
+
 /* ── Background update check ──────────────────────────────────── */
 
 #define UPDATE_CHECK_URL "https://api.github.com/repos/DeusData/codebase-memory-mcp/releases/latest"
@@ -4496,6 +4520,7 @@ char *cbm_mcp_server_handle(cbm_mcp_server_t *srv, const char *line) {
         start_update_check(srv);
         detect_session(srv);
         maybe_auto_index(srv);
+        maybe_workspace_auto_index(srv);
     } else if (strcmp(req.method, "ping") == 0) {
         result_json = heap_strdup("{}");
     } else if (strcmp(req.method, "tools/list") == 0) {

@@ -2583,6 +2583,12 @@ int cbm_cmd_config(int argc, char **argv) {
                "Enable auto-indexing on MCP session start");
         printf("  %-25s  default=%-10s  %s\n", CBM_CONFIG_AUTO_INDEX_LIMIT, "50000",
                "Max files for auto-indexing new projects");
+        printf("  %-25s  default=%-10s  %s\n", CBM_CONFIG_WORKSPACE_AUTO_INDEX, "false",
+               "Enable opt-in workspace auto-indexing on MCP startup");
+        printf("  %-25s  default=%-10s  %s\n", CBM_CONFIG_WORKSPACE_ROOTS, "\"\"",
+               "Comma-separated workspace roots to discover");
+        printf("  %-25s  default=%-10s  %s\n", CBM_CONFIG_WORKSPACE_INDEX_LIMIT, "50000",
+               "Max tracked indexable source files per workspace repo");
         return 0;
     }
 
@@ -2608,6 +2614,12 @@ int cbm_cmd_config(int argc, char **argv) {
                cbm_config_get(cfg, CBM_CONFIG_AUTO_INDEX, "false"));
         printf("  %-25s = %-10s\n", CBM_CONFIG_AUTO_INDEX_LIMIT,
                cbm_config_get(cfg, CBM_CONFIG_AUTO_INDEX_LIMIT, "50000"));
+        printf("  %-25s = %-10s\n", CBM_CONFIG_WORKSPACE_AUTO_INDEX,
+               cbm_config_get(cfg, CBM_CONFIG_WORKSPACE_AUTO_INDEX, "false"));
+        printf("  %-25s = %-10s\n", CBM_CONFIG_WORKSPACE_ROOTS,
+               cbm_config_get(cfg, CBM_CONFIG_WORKSPACE_ROOTS, ""));
+        printf("  %-25s = %-10s\n", CBM_CONFIG_WORKSPACE_INDEX_LIMIT,
+               cbm_config_get(cfg, CBM_CONFIG_WORKSPACE_INDEX_LIMIT, "50000"));
     } else if (strcmp(argv[0], "get") == 0) {
         if (argc < MIN_ARGC_GET) {
             (void)fprintf(stderr, "Usage: config get <key>\n");

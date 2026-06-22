@@ -40,6 +40,7 @@ enum {
 #include "foundation/compat_thread.h"
 #include "foundation/mem.h"
 #include "foundation/profile.h"
+#include "workspace_index/workspace_index.h"
 #include "ui/config.h"
 #include "ui/http_server.h"
 #include "ui/embedded_assets.h"
@@ -288,6 +289,7 @@ static void print_help(void) {
     printf("  codebase-memory-mcp uninstall [-y|-n] [--dry-run]\n");
     printf("  codebase-memory-mcp update [-y|-n]\n");
     printf("  codebase-memory-mcp config <list|get|set|reset>\n");
+    printf("  codebase-memory-mcp workspace-index [--root PATH] [--apply] [--json]\n");
     printf("  codebase-memory-mcp --version    Print version\n");
     printf("  codebase-memory-mcp --help       Print this help\n");
     printf("\nUI options:\n");
@@ -342,6 +344,10 @@ static int handle_subcommand(int argc, char **argv) {
         }
         if (strcmp(argv[i], "config") == 0) {
             return cbm_cmd_config(argc - i - SKIP_ONE, argv + i + SKIP_ONE);
+        }
+        if (strcmp(argv[i], "workspace-index") == 0) {
+            cbm_mem_init(MAIN_RAM_FRACTION);
+            return cbm_cmd_workspace_index(argc - i - SKIP_ONE, argv + i + SKIP_ONE);
         }
     }
     return CBM_NOT_FOUND;

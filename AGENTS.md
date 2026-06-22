@@ -27,6 +27,7 @@
 - re-read planning-related policy before opening, revising, or closing a substantive plan
 - re-read documentation-related policy before changing docs, contracts, or canonical authorities
 - re-read validation and closeout policy before claiming work complete
+- re-read workspace auto-index policy before changing broad repository discovery, indexing, watcher, or startup behavior
 
 ## Policy Entry
 
@@ -47,6 +48,9 @@ Read and follow:
 - `docs/dev/policies/0012-turn-closeout.md`
 - `docs/dev/policies/0013-subagent-workflow-optimization.md`
 - `docs/dev/policies/0014-validation-and-handoff.md`
+- `docs/dev/policies/0015-subagent-runtime-governance.md`
+- `docs/dev/policies/0016-upstream-fork-maintenance.md`
+- `docs/dev/policies/0017-workspace-auto-index-governance.md`
 
 ## Scope
 
