@@ -12,8 +12,9 @@ Implement an opt-in workspace auto-index path that can discover and maintain eli
 - Broad workspace indexing now exists as an opt-in path behind `workspace_auto_index` and `workspace_roots`.
 - Eligibility is gated by tracked, indexable source files, not raw repository size or all tracked file count.
 - A cache-local `_workspace_index.lock` prevents concurrent broad workspace applies across multiple MCP server processes.
-- The installed runtime has `workspace_roots=/home/ecochran76/workspace.local` and `workspace_auto_index=false`. Broad startup auto-indexing remains implemented but disabled because real startup smoke still showed multi-GB MCP growth; manual preview/apply is the safe current operating mode.
-- Manual workspace apply populated the current cache: preview shows 73 repositories discovered, 72 already indexed, and 1 skipped because it has no indexable source.
+- The installed runtime has `workspace_roots=/home/ecochran76/workspace.local` and `workspace_auto_index=false`. Broad startup auto-indexing remains disabled while the machine is under swap pressure; manual preview/apply remains the safe current operating mode.
+- Manual workspace apply populated the current cache: installed preview now shows 74 repositories discovered, 72 already indexed, 2 skipped because they have no indexable source, 0 pending, and `lock_busy=false`.
+- Follow-up memory safeguards are implemented in repo code: startup auto-index snapshots config before the worker thread starts, uses a singleton startup owner lease, applies a default batch limit of 1 new repository per startup, samples `/proc/meminfo` and cgroup v2 memory/swap state before indexing, reports explicit defer/skip statuses, skips known storage-heavy runtime artifact trees in fast mode, and avoids broad workspace watcher registration from startup auto-index.
 
 ## Scope
 
@@ -58,34 +59,48 @@ Implement an opt-in workspace auto-index path that can discover and maintain eli
 - lock smoke: live PID lock reports `workspace_index_lock_busy`; stale PID lock is removed and apply succeeds
 - real workspace preview after manual population: `repositories=73`, `already_indexed=72`, `no_indexable_files=1`, `lock_busy=false`
 - real startup auto-index smoke after cross-process lock and watcher hardening still showed unsafe multi-GB MCP growth, so installed `workspace_auto_index` was disabled pending a stricter singleton or batch policy
+- 2026-06-22 safeguard validation:
+  - `make -f Makefile.cbm cbm`
+  - `git diff --check`
+  - `make -f Makefile.cbm test-foundation`
+  - `make -f Makefile.cbm test`
+  - isolated CLI batch smoke: two eligible repos with `--apply --max-apply 1` produced `applied_count=1` and one `deferred_by_batch_limit`
+  - isolated CLI memory-gate smoke: impossible memory floor produced `skipped_by_memory_gate` and no repo DB
+  - isolated concurrent MCP startup smoke: two MCP initializes with `workspace_auto_index=true`, batch limit 1, and permissive memory gates produced exactly one repo DB, no `_workspace_index.lock`, and a startup owner lease
+  - isolated startup memory-gate smoke: swap ceiling below current pressure produced no repo DB and no `_workspace_index.lock`
+  - isolated artifact-tree smoke: fast pipeline discovered 1 real source file and skipped 200 untracked files under `local/runtime`
+  - real bounded catch-up: `soylei-website-content-platform` was rebuilt after artifact filtering; discovered files dropped from 26,045 to 1,078, peak memory dropped from about 9.2 GiB to 339 MiB, and DB size dropped from 1.1 GiB to 26 MiB
+  - installed workspace preview after catch-up: `repository_count=74`, `already_indexed=72`, `no_indexable_files=2`, `would_index=0`, `lock_busy=false`
+  - real host readback still shows high swap use, so real-home `workspace_auto_index` must remain disabled until a later low-pressure smoke passes
 
-## Required Follow-Up | Memory Management Safeguards
+## Implemented Follow-Up | Memory Management Safeguards
 
-Startup workspace auto-indexing must remain disabled in the installed runtime until a follow-up slice implements and validates explicit memory safeguards.
+Startup workspace auto-indexing must remain disabled in the installed runtime until a real `~/workspace.local` startup smoke passes without multi-GB RSS growth or new swap pressure.
 
-Required safeguards:
+Implemented safeguards:
 
-- Add a singleton workspace-index owner, not merely a per-apply lock, so ordinary agent-launched MCP server processes cannot each perform broad workspace maintenance.
-- Add a batch limit for startup auto-indexing, for example a small maximum number of new repositories per MCP start, with continuation deferred to later starts or an explicit operator command.
-- Add a memory gate before each repository index:
+- Added a singleton startup owner lease so ordinary agent-launched MCP server processes in the same burst cannot each perform broad workspace maintenance.
+- Added `workspace_index_batch_limit` for startup auto-indexing. The default is `1`; manual `workspace-index --apply` remains unlimited unless `--max-apply` is provided.
+- Added a memory gate before each repository index:
   - check available RAM from the platform/cgroup view
   - check swap pressure where available
   - skip or abort broad indexing when available memory is below a conservative threshold
-- Add a per-repository memory-risk score based on indexable source count and previous observed RSS when available.
-- Prefer manual `workspace-index --apply` for initial population and keep startup auto-index focused on small incremental catch-up.
-- Release `_workspace_index.lock` reliably on normal exits and clean stale locks on restart, which is already implemented but must stay covered by tests.
-- Do not broadly register all workspace repositories with every MCP watcher. Broad watcher behavior needs a singleton watcher owner, per-repo lease, or a separate managed daemon before it can be enabled.
-- Add operator-facing status output that distinguishes:
+- Added a per-repository memory-risk score based on indexable source count.
+- Added fast-mode path-specific skips for `local/runtime` and `local/dev-runtime` artifact trees so workspace apply does not index generated/runtime storage that preview policy is meant to exclude.
+- Kept manual `workspace-index --apply` as the preferred initial population path and kept startup auto-index focused on small incremental catch-up.
+- Kept `_workspace_index.lock` release and stale-lock cleanup covered by isolated smokes.
+- Disabled broad workspace watcher registration from startup auto-index. Broad watcher behavior still needs a singleton watcher owner, per-repo lease, or a separate managed daemon before it can be enabled.
+- Added operator-facing status output that distinguishes:
   - indexed
   - eligible but deferred by batch cap
   - skipped by memory gate
   - skipped by active lock
   - skipped by source-count policy
-- Add validation that starts multiple MCP server processes with `workspace_auto_index=true` under an isolated cache and proves:
+- Added validation that starts multiple MCP server processes with `workspace_auto_index=true` under an isolated cache and proves:
   - at most one workspace maintenance job runs
-  - memory remains below the configured threshold
+  - work is skipped when configured memory or swap thresholds are exceeded
   - the second process exits or skips cleanly
-  - no stale lock remains
+  - no stale `_workspace_index.lock` apply lock remains
 
 Acceptance criteria for re-enabling installed startup auto-index:
 

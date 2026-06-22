@@ -124,11 +124,11 @@ codebase-memory-mcp workspace-index --root ~/workspace.local --apply
 codebase-memory-mcp config set workspace_roots ~/workspace.local
 ```
 
-Workspace indexing is opt-in and uses tracked, indexable source-file counts rather than repository disk size, so artifact-heavy repositories are not excluded merely because they contain resources. Configurable source-file limit: `config set workspace_index_limit 50000`.
+Workspace indexing is opt-in and uses tracked, indexable source-file counts rather than repository disk size, so artifact-heavy repositories are not excluded merely because they contain resources. Fast indexing also skips known storage-heavy runtime artifact trees such as `local/runtime` and `local/dev-runtime`. Configurable source-file limit: `config set workspace_index_limit 50000`.
 
 Only one workspace apply runs at a time across MCP server processes. If another broad workspace apply is active, additional startup attempts skip the apply instead of launching competing indexers.
 
-`workspace_auto_index` exists for controlled dogfooding, but broad startup auto-apply can still be expensive on large workspaces. Prefer preview/apply until a singleton workspace indexer or stricter batch policy is active.
+Startup workspace auto-index is intended for small incremental catch-up, not initial population. It defaults to one new repository per startup, checks available memory and swap pressure before each repository, and reports explicit statuses such as `deferred_by_batch_limit`, `skipped_by_memory_gate`, and `skipped_by_active_lock`. Prefer manual `workspace-index --apply` for initial population.
 
 ### Keeping Up to Date
 
@@ -451,6 +451,9 @@ codebase-memory-mcp workspace-index --root ~/workspace.local --json  # preview w
 codebase-memory-mcp config set workspace_roots ~/workspace.local      # workspace root allowlist
 codebase-memory-mcp config set workspace_auto_index true              # experimental startup auto-index
 codebase-memory-mcp config set workspace_index_limit 50000            # max indexable source files
+codebase-memory-mcp config set workspace_index_batch_limit 1           # max new repos per startup
+codebase-memory-mcp config set workspace_index_min_available_mb 4096   # startup memory floor
+codebase-memory-mcp config set workspace_index_max_swap_used_mb 1024   # startup swap ceiling
 codebase-memory-mcp config reset auto_index              # reset to default
 ```
 

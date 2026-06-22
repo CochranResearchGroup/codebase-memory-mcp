@@ -261,6 +261,9 @@ int cbm_config_delete(cbm_config_t *cfg, const char *key);
 #define CBM_CONFIG_WORKSPACE_AUTO_INDEX "workspace_auto_index"
 #define CBM_CONFIG_WORKSPACE_ROOTS "workspace_roots"
 #define CBM_CONFIG_WORKSPACE_INDEX_LIMIT "workspace_index_limit"
+#define CBM_CONFIG_WORKSPACE_INDEX_BATCH_LIMIT "workspace_index_batch_limit"
+#define CBM_CONFIG_WORKSPACE_INDEX_MIN_AVAILABLE_MB "workspace_index_min_available_mb"
+#define CBM_CONFIG_WORKSPACE_INDEX_MAX_SWAP_USED_MB "workspace_index_max_swap_used_mb"
 
 /* ── Subcommands (wired from main.c) ─────────────────────────── */
 

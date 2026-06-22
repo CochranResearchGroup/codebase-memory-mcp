@@ -4364,9 +4364,32 @@ static void maybe_auto_index(cbm_mcp_server_t *srv) {
     }
 }
 
+typedef struct {
+    char roots[CBM_PATH_MAX * CBM_SZ_4];
+    int limit;
+    int max_apply;
+    int min_available_mb;
+    int max_swap_used_mb;
+} workspace_autoindex_job_t;
+
 static void *workspace_autoindex_thread(void *arg) {
-    cbm_mcp_server_t *srv = (cbm_mcp_server_t *)arg;
-    cbm_workspace_auto_index_from_config(srv->config, srv->watcher);
+    workspace_autoindex_job_t *job = (workspace_autoindex_job_t *)arg;
+    if (!job) {
+        return NULL;
+    }
+    cbm_workspace_index_options_t opts = {
+        .roots = job->roots,
+        .limit = job->limit,
+        .max_apply = job->max_apply,
+        .min_available_mb = job->min_available_mb,
+        .max_swap_used_mb = job->max_swap_used_mb,
+        .apply = true,
+        .json = true,
+        .nonblocking_lock = true,
+        .watcher = NULL,
+    };
+    cbm_workspace_auto_index_run(&opts);
+    free(job);
     return NULL;
 }
 
@@ -4377,8 +4400,26 @@ static void maybe_workspace_auto_index(cbm_mcp_server_t *srv) {
     if (!cbm_config_get_bool(srv->config, CBM_CONFIG_WORKSPACE_AUTO_INDEX, false)) {
         return;
     }
-    if (cbm_thread_create(&srv->workspace_autoindex_tid, 0, workspace_autoindex_thread, srv) == 0) {
+    const char *roots = cbm_config_get(srv->config, CBM_CONFIG_WORKSPACE_ROOTS, "");
+    if (!roots || !roots[0]) {
+        cbm_log_info("workspace_index.skip", "reason", "no_workspace_roots");
+        return;
+    }
+    workspace_autoindex_job_t *job = calloc(1, sizeof(*job));
+    if (!job) {
+        return;
+    }
+    snprintf(job->roots, sizeof(job->roots), "%s", roots);
+    job->limit = cbm_config_get_int(srv->config, CBM_CONFIG_WORKSPACE_INDEX_LIMIT, 50000);
+    job->max_apply = cbm_config_get_int(srv->config, CBM_CONFIG_WORKSPACE_INDEX_BATCH_LIMIT, 1);
+    job->min_available_mb =
+        cbm_config_get_int(srv->config, CBM_CONFIG_WORKSPACE_INDEX_MIN_AVAILABLE_MB, 4096);
+    job->max_swap_used_mb =
+        cbm_config_get_int(srv->config, CBM_CONFIG_WORKSPACE_INDEX_MAX_SWAP_USED_MB, 1024);
+    if (cbm_thread_create(&srv->workspace_autoindex_tid, 0, workspace_autoindex_thread, job) == 0) {
         srv->workspace_autoindex_active = true;
+    } else {
+        free(job);
     }
 }
 

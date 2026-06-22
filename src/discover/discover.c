@@ -89,6 +89,9 @@ static const char *FAST_PATTERNS[] = {".d.ts",      ".bundle.", ".chunk.", ".gen
                                       "_string.go", "mock_",    "_mock.",  "_test_helpers.",
                                       ".stories.",  ".spec.",   ".test.",  NULL};
 
+static const char *FAST_DIR_PATTERNS[] = {
+    "local/runtime", "local/dev-runtime", NULL};
+
 /* ── Ignored JSON filenames ──────────────────────── */
 
 static const char *IGNORED_JSON_FILES[] = {
@@ -202,6 +205,21 @@ bool cbm_matches_fast_pattern(const char *filename, cbm_index_mode_t mode) {
     return false;
 }
 
+static bool matches_fast_dir_pattern(const char *rel_path, cbm_index_mode_t mode) {
+    if (!rel_path || mode == CBM_MODE_FULL) {
+        return false;
+    }
+    for (int i = 0; FAST_DIR_PATTERNS[i]; i++) {
+        const char *pattern = FAST_DIR_PATTERNS[i];
+        size_t pattern_len = strlen(pattern);
+        if (strncmp(rel_path, pattern, pattern_len) == 0 &&
+            (rel_path[pattern_len] == '\0' || rel_path[pattern_len] == '/')) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /* ── Dynamic file list ────────────────────────── */
 
 typedef struct {
@@ -276,6 +294,9 @@ static bool should_skip_directory(const char *entry_name, const char *rel_path,
                                   const cbm_gitignore_t *cbmignore, const cbm_gitignore_t *local_gi,
                                   const char *local_gi_prefix) {
     if (cbm_should_skip_dir(entry_name, opts ? opts->mode : CBM_MODE_FULL)) {
+        return true;
+    }
+    if (matches_fast_dir_pattern(rel_path, opts ? opts->mode : CBM_MODE_FULL)) {
         return true;
     }
     if (gitignore && cbm_gitignore_matches(gitignore, rel_path, true)) {

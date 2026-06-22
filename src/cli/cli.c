@@ -2589,6 +2589,12 @@ int cbm_cmd_config(int argc, char **argv) {
                "Comma-separated workspace roots to discover");
         printf("  %-25s  default=%-10s  %s\n", CBM_CONFIG_WORKSPACE_INDEX_LIMIT, "50000",
                "Max tracked indexable source files per workspace repo");
+        printf("  %-25s  default=%-10s  %s\n", CBM_CONFIG_WORKSPACE_INDEX_BATCH_LIMIT, "1",
+               "Max new workspace repos indexed per startup apply");
+        printf("  %-25s  default=%-10s  %s\n", CBM_CONFIG_WORKSPACE_INDEX_MIN_AVAILABLE_MB,
+               "4096", "Minimum available MB before startup workspace indexing");
+        printf("  %-25s  default=%-10s  %s\n", CBM_CONFIG_WORKSPACE_INDEX_MAX_SWAP_USED_MB,
+               "1024", "Maximum swap-used MB before startup workspace indexing");
         return 0;
     }
 
@@ -2620,6 +2626,12 @@ int cbm_cmd_config(int argc, char **argv) {
                cbm_config_get(cfg, CBM_CONFIG_WORKSPACE_ROOTS, ""));
         printf("  %-25s = %-10s\n", CBM_CONFIG_WORKSPACE_INDEX_LIMIT,
                cbm_config_get(cfg, CBM_CONFIG_WORKSPACE_INDEX_LIMIT, "50000"));
+        printf("  %-25s = %-10s\n", CBM_CONFIG_WORKSPACE_INDEX_BATCH_LIMIT,
+               cbm_config_get(cfg, CBM_CONFIG_WORKSPACE_INDEX_BATCH_LIMIT, "1"));
+        printf("  %-25s = %-10s\n", CBM_CONFIG_WORKSPACE_INDEX_MIN_AVAILABLE_MB,
+               cbm_config_get(cfg, CBM_CONFIG_WORKSPACE_INDEX_MIN_AVAILABLE_MB, "4096"));
+        printf("  %-25s = %-10s\n", CBM_CONFIG_WORKSPACE_INDEX_MAX_SWAP_USED_MB,
+               cbm_config_get(cfg, CBM_CONFIG_WORKSPACE_INDEX_MAX_SWAP_USED_MB, "1024"));
     } else if (strcmp(argv[0], "get") == 0) {
         if (argc < MIN_ARGC_GET) {
             (void)fprintf(stderr, "Usage: config get <key>\n");
