@@ -14,10 +14,12 @@
 - Provide a preview path that reports discovered repositories, tracked count, indexable source count, current index status, and skip reason before broad apply.
 - Background workspace auto-indexing must be non-blocking for MCP startup and must respect both in-process and cross-process indexing locks. If another indexing pipeline or workspace apply is active, skip or defer rather than competing for memory.
 - Broad workspace auto-indexing must assume multiple MCP server processes may be launched by different agents. The lock must be stored in shared runtime/cache state, not only in process memory.
-- Existing indexed repositories discovered by the workspace policy should be registered with the watcher so git changes can keep them current while the MCP server is running.
+- Existing indexed repositories discovered by the workspace policy must not all be registered with every agent-launched MCP process by default. Broad watcher registration can make multiple MCP processes reindex dirty repositories in parallel and exhaust RAM.
+- Use per-session watcher registration for the active repository. Broad workspace watcher ownership requires a singleton owner or equivalent cross-process lease before it can be enabled safely.
 - New repositories selected by broad workspace auto-indexing should use fast indexing by default to reduce resource impact. A user-initiated explicit index command may still use full mode.
 - Do not enable real-home workspace auto-indexing in repo changes or tests without explicit operator intent and preview evidence.
-- If broad indexing pressures RAM or swap, disable `workspace_auto_index`, terminate active indexing processes, and resume through preview/apply after adding a tighter concurrency or batch policy.
+- Do not leave `workspace_auto_index=true` in the installed runtime if startup smokes show multi-GB MCP server growth, retained locks, or swap pressure. In that case, keep `workspace_roots` configured and use manual preview/apply until startup auto-indexing has a stricter singleton or batch design.
+- If broad indexing or broad watcher registration pressures RAM or swap, disable `workspace_auto_index`, terminate active indexing processes, and resume through preview/apply after adding a tighter concurrency, batch, or singleton-watcher policy.
 
 ## Adoption Notes
 

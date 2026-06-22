@@ -2584,7 +2584,7 @@ int cbm_cmd_config(int argc, char **argv) {
         printf("  %-25s  default=%-10s  %s\n", CBM_CONFIG_AUTO_INDEX_LIMIT, "50000",
                "Max files for auto-indexing new projects");
         printf("  %-25s  default=%-10s  %s\n", CBM_CONFIG_WORKSPACE_AUTO_INDEX, "false",
-               "Enable opt-in workspace auto-indexing on MCP startup");
+               "Enable experimental workspace auto-indexing on MCP startup");
         printf("  %-25s  default=%-10s  %s\n", CBM_CONFIG_WORKSPACE_ROOTS, "\"\"",
                "Comma-separated workspace roots to discover");
         printf("  %-25s  default=%-10s  %s\n", CBM_CONFIG_WORKSPACE_INDEX_LIMIT, "50000",

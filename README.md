@@ -122,12 +122,13 @@ For cross-repo workspaces, preview eligible Git repositories before enabling bro
 codebase-memory-mcp workspace-index --root ~/workspace.local --json
 codebase-memory-mcp workspace-index --root ~/workspace.local --apply
 codebase-memory-mcp config set workspace_roots ~/workspace.local
-codebase-memory-mcp config set workspace_auto_index true
 ```
 
 Workspace indexing is opt-in and uses tracked, indexable source-file counts rather than repository disk size, so artifact-heavy repositories are not excluded merely because they contain resources. Configurable source-file limit: `config set workspace_index_limit 50000`.
 
 Only one workspace apply runs at a time across MCP server processes. If another broad workspace apply is active, additional startup attempts skip the apply instead of launching competing indexers.
+
+`workspace_auto_index` exists for controlled dogfooding, but broad startup auto-apply can still be expensive on large workspaces. Prefer preview/apply until a singleton workspace indexer or stricter batch policy is active.
 
 ### Keeping Up to Date
 
@@ -448,7 +449,7 @@ codebase-memory-mcp config set auto_index true           # auto-index on session
 codebase-memory-mcp config set auto_index_limit 50000    # max files for auto-index
 codebase-memory-mcp workspace-index --root ~/workspace.local --json  # preview workspace repos
 codebase-memory-mcp config set workspace_roots ~/workspace.local      # workspace root allowlist
-codebase-memory-mcp config set workspace_auto_index true              # opt-in workspace auto-index
+codebase-memory-mcp config set workspace_auto_index true              # experimental startup auto-index
 codebase-memory-mcp config set workspace_index_limit 50000            # max indexable source files
 codebase-memory-mcp config reset auto_index              # reset to default
 ```

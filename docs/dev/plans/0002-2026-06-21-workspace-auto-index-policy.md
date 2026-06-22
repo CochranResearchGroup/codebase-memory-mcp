@@ -12,7 +12,7 @@ Implement an opt-in workspace auto-index path that can discover and maintain eli
 - Broad workspace indexing now exists as an opt-in path behind `workspace_auto_index` and `workspace_roots`.
 - Eligibility is gated by tracked, indexable source files, not raw repository size or all tracked file count.
 - A cache-local `_workspace_index.lock` prevents concurrent broad workspace applies across multiple MCP server processes.
-- The installed runtime has `workspace_roots=/home/ecochran76/workspace.local` and `workspace_auto_index=false`; the root is configured, but automatic broad startup indexing is disabled after the WSL RAM pressure incident.
+- The installed runtime has `workspace_roots=/home/ecochran76/workspace.local` and `workspace_auto_index=false`. Broad startup auto-indexing remains implemented but disabled because real startup smoke still showed multi-GB MCP growth; manual preview/apply is the safe current operating mode.
 - Manual workspace apply populated the current cache: preview shows 73 repositories discovered, 72 already indexed, and 1 skipped because it has no indexable source.
 
 ## Scope
@@ -39,7 +39,7 @@ Implement an opt-in workspace auto-index path that can discover and maintain eli
 - MCP initialize starts broad workspace indexing only when `workspace_auto_index=true` and `workspace_roots` is set.
 - Background workspace indexing does not block MCP startup and respects the global pipeline lock.
 - Background workspace indexing respects a cross-process workspace lock so only one broad workspace apply can run at a time across agent-launched MCP processes.
-- Existing indexed repositories discovered through workspace roots are registered with the watcher.
+- Existing indexed repositories discovered through workspace roots are not registered with every MCP process watcher; per-session watcher behavior remains, and broad watcher ownership is deferred until a singleton owner exists.
 - Validation includes build, focused tests or smokes, and an isolated-home workspace preview/apply smoke.
 
 ## Definition Of Done
@@ -57,3 +57,4 @@ Implement an opt-in workspace auto-index path that can discover and maintain eli
 - isolated MCP initialize smoke: `workspace_auto_index=true` with temp config created the expected repo DB
 - lock smoke: live PID lock reports `workspace_index_lock_busy`; stale PID lock is removed and apply succeeds
 - real workspace preview after manual population: `repositories=73`, `already_indexed=72`, `no_indexable_files=1`, `lock_busy=false`
+- real startup auto-index smoke after cross-process lock and watcher hardening still showed unsafe multi-GB MCP growth, so installed `workspace_auto_index` was disabled pending a stricter singleton or batch policy

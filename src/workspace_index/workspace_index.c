@@ -295,9 +295,7 @@ static void wi_classify(wi_repo_result_t *r, int limit) {
 
 static int wi_apply_repo(const wi_repo_result_t *r, const cbm_workspace_index_options_t *opts) {
     if (strcmp(r->status, "already_indexed") == 0) {
-        if (opts->watcher) {
-            cbm_watcher_watch(opts->watcher, r->project, r->path);
-        }
+        (void)opts;
         return 0;
     }
     if (strcmp(r->status, "would_index") != 0) {
