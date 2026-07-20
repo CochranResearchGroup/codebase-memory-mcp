@@ -1,4 +1,13 @@
-# Policy | Subagent Workflow Optimization
+---
+id: subagent-workflow-optimization
+title: Subagent Workflow Optimization
+summary: Make an explicit delegation decision for non-trivial work, automatically use subagents for valuable bounded lanes, and keep the primary agent on orchestration and integration.
+tags:
+  - agents
+  - delegation
+  - subagents
+  - optimization
+---
 
 ## Policy
 

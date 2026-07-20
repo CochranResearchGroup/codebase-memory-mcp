@@ -1,4 +1,13 @@
-# Policy | Graph-Backed Memory Usage
+---
+id: graph-backed-memory-usage
+title: Graph-Backed Memory Usage
+summary: Use graph-backed memory as durable retrievable context without turning it into a scratchpad or replacing notes and memories docs.
+tags:
+  - memory
+  - graph
+  - retrieval
+  - continuity
+---
 
 ## Policy
 

@@ -1,19 +1,12 @@
-# Codebase Memory MCP
+# Codebase Memory Mcp
 
 ## Repo Context
 
-- `codebase-memory-mcp` is a local-first C knowledge-graph MCP server and CLI for codebase indexing, structural search, tracing, ADR storage, installer/config management, and optional graph UI.
-- Treat this repo as a `library-cli` surface: release and installer behavior affect downstream users and agent startup configs, so changes need focused validation and conservative scope.
-- Bounded execution plans live under `docs/dev/plans/`. This repo does not currently use `ROADMAP.md` or `RUNBOOK.md`; do not introduce those unless the planning model changes intentionally.
+- Describe this repo's purpose, canonical planning surfaces, and operating model here.
 
 ## Repo-Specific Guidance
 
-- Main build: `make -f Makefile.cbm cbm`. If local `libgit2` auto-detection is under investigation, compare default build behavior against `make -f Makefile.cbm cbm LIBGIT2_FLAGS= LIBGIT2_LIBS=`.
-- Full test entrypoint: `scripts/test.sh`. Targeted checks include `make -f Makefile.cbm test-foundation`, `scripts/smoke-test.sh`, and direct CLI/MCP smokes with an isolated `HOME` and `CBM_CACHE_DIR`.
-- Never run `codebase-memory-mcp install`, `uninstall`, or `update` against the real home directory during review. Use `--dry-run`, `--plan`, or an isolated temporary `HOME`.
-- Treat `build/`, local caches, generated DBs, and installed agent config files as derived local state. Do not stage them.
-- Installer, MCP startup, checksum, update, and shell-command paths are security-sensitive. Validate them with isolated-home or temporary-cache smokes before claiming them fixed.
-- Keep README and packaging claims aligned with verifiable behavior, especially for static/dynamic linkage, language counts, checksum verification, and supported agents.
+- Add the exact commands, constraints, and local conventions this repo expects.
 
 ## Policy Loading Contract
 
@@ -27,7 +20,6 @@
 - re-read planning-related policy before opening, revising, or closing a substantive plan
 - re-read documentation-related policy before changing docs, contracts, or canonical authorities
 - re-read validation and closeout policy before claiming work complete
-- re-read workspace auto-index policy before changing broad repository discovery, indexing, watcher, or startup behavior
 
 ## Policy Entry
 
