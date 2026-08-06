@@ -11,6 +11,9 @@ tags:
 
 ## Policy
 
+- Adopt bounded planning discipline in every repo, with ceremony proportional
+  to the work. Trivial one-step tasks do not need a plan artifact; substantive,
+  multi-file, multi-step, risky, or resumable work does.
 - Use bounded plan artifacts under `docs/dev/plans/` or an equivalent plans directory, not ad hoc note files scattered through the repo.
 - Plan filenames should use a deterministic serial-plus-date prefix such as `0001-YYYY-MM-DD-plan-slug.md`.
 - If the repo uses a canonical long-range plan such as `ROADMAP.md`, treat it as the source of truth for priority.
@@ -36,6 +39,10 @@ tags:
 - Separate the stable objective and milestone plan from mutable execution state.
   Record material replanning as an explicit revision or successor plan rather
   than silently rewriting the goal to fit current progress.
+- Keep goal-level control state outside any one plan version. Successor plans,
+  packet retries, and reviewer replacement inherit standing authority, accepted
+  finding ledgers, review-discovery counts, and no-progress history; they do not
+  reset those controls merely by changing a filename or version number.
 - Give each active execution packet one bounded outcome, owner, expected write
   surface, required inputs, validation evidence, and terminal condition.
 - When a task is large enough to plan, explicitly separate:
@@ -48,6 +55,9 @@ tags:
   authority drift even when the implementation itself is sound.
 - Do not equate plan activity with progress. Require current evidence that a
   slice advances an acceptance criterion or removes a verified blocker.
+- Classify plan-only refinement, reviewer novelty, extra documentation, and
+  speculative hardening as hardening rather than outcome progress unless they
+  demonstrably remove a verified blocker or advance an acceptance criterion.
 - If the repo adopts roadmap/runbook governance, keep plan wiring and plan state aligned with those canonical files.
 - When the planning contract changes in a way that affects validation, update the deterministic audit helper in the same slice.
 - Separate steady-state enforcement from legacy migration. A current/active
@@ -57,9 +67,9 @@ tags:
 
 ## Adoption Notes
 
-Use this module when the repo has:
-- multiple active lanes
-- bounded plan artifacts or equivalent planning discipline
+Use this module as a baseline in every starter profile. A lightweight repo may
+use short bounded plans only for substantive work; baseline adoption does not
+imply that every turn needs a plan.
 
 Use `roadmap-runbook-governance` as the stricter companion module when the repo keeps canonical `ROADMAP.md` and `RUNBOOK.md` authority.
 

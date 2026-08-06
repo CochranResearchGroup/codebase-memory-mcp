@@ -27,9 +27,24 @@ tags:
 - For long-running, high-risk, or consequential work, separate implementation
   from final judgment by using an independent evaluator with fresh context and
   explicit acceptance criteria.
-- Bound review and rework. Prefer one consolidated finding set and one bounded
-  remediation pass; if final verification still fails, split, reframe, or block
-  the unit instead of continuing an open-ended evaluator/optimizer loop.
+- Treat evaluator output as candidate evidence, not an automatic veto. The
+  primary agent owns adjudication and records each candidate as `blocking`,
+  `nonblocking_backlog`, `rejected`, or `needs_evidence` against the frozen
+  objective, acceptance criteria, non-goals, and applicable safety controls.
+- Require each candidate finding to state the criterion, evidence, consequence,
+  reproducer, confidence, and suggested disposition. A useful independent
+  review may return no findings; novelty and finding count are not quality
+  metrics.
+- Separate review modes. Use one broad fresh-context `drift_discovery` pass to
+  find material divergence. After adjudication, use `closed_world` remediation
+  verification limited to accepted blocking findings and critical regressions
+  introduced by their fixes. Do not reopen broad discovery merely because a
+  new evaluator performs final verification.
+- Bound review and rework at the goal level, not only per plan version. Prefer
+  one consolidated candidate set and one bounded remediation pass; if accepted
+  blocking findings still fail verification, split, reframe, or block the unit
+  instead of continuing an open-ended evaluator/optimizer loop. Record
+  nonblocking concerns in backlog without silently expanding the active plan.
 - Validate the resulting outcome and current external state, not only the
   transcript, diff shape, test count, or agent's narrative of progress.
 - Treat fail-closed gates as successful policy execution when they prevent an

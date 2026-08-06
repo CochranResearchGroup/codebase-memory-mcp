@@ -37,6 +37,18 @@ tags:
 - Prefer fresh context when independence is part of the value: neutral review,
   adversarial audit, a newly split work unit after drift, or a handoff intended
   to shed accumulated context and assumptions.
+- For a fresh reviewer, provide a frozen review packet: objective, acceptance
+  criteria, non-goals, target identity or commit, applicable gates, review mode,
+  and—during remediation verification—the accepted finding ledger. Ask for
+  evidence-shaped candidate findings and explicitly permit a no-finding result.
+- A reviewer detects drift; it does not own scope, finding disposition, goal
+  authority, or operator approval. The primary agent reconciles the result and
+  may reject, backlog, or seek evidence for a candidate that does not satisfy
+  the frozen contract.
+- Use broad fresh context for the initial drift scan. Use closed-world prompts
+  for later verification and carry the same finding identifiers across worker
+  replacement, plan revisions, and successor packets so review discovery does
+  not restart accidentally.
 - Keep final integration responsibility with the primary agent even when subagents perform part of the work.
 - Be explicit about whether the repo optimizes for wall-clock speed, token efficiency, or a balance of the two.
 - Treat spawned subagents as asynchronous runtime artifacts, not just informal delegation.

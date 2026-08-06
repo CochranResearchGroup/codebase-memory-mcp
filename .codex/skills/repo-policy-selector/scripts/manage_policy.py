@@ -124,6 +124,7 @@ def main() -> int:
     install_parser.add_argument("--selector-subdir", default="repo-policy-selector")
     install_parser.add_argument("--target-repo-root", required=True)
     install_parser.add_argument("--install-relpath", default=".codex/skills/repo-policy-selector")
+    install_parser.add_argument("--install-record-relpath", default=".codex/policy-selector-install.json")
     install_parser.add_argument("--force", action="store_true")
     install_parser.add_argument("--write-drafts", action="store_true")
     install_parser.add_argument("--json", action="store_true")
@@ -224,6 +225,7 @@ def main() -> int:
             selector_subdir=args.selector_subdir,
             target_repo_root=Path(args.target_repo_root).resolve(),
             install_relpath=args.install_relpath,
+            install_record_relpath=args.install_record_relpath,
             force=args.force,
             write_drafts=args.write_drafts,
         )

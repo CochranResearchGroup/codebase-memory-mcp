@@ -7,6 +7,7 @@ modules:
   - policy-adoption-feedback-loop
   - notes-and-memories
   - graph-backed-memory-usage
+  - planning-discipline
   - course-workspace-governance
   - lms-cli-governance
   - cloud-drive-course-governance

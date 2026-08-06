@@ -6,6 +6,7 @@ modules:
   - policy-upgrade-management
   - policy-adoption-feedback-loop
   - graph-backed-memory-usage
+  - planning-discipline
   - codegraph-usage
   - git-worktree-hygiene
   - commit-history-discipline

@@ -1,14 +1,4 @@
----
-id: goal-execution-governance
-title: Goal Execution Governance
-summary: Keep long-running agent goals convergent with stable objectives, explicit execution states, durable checkpoints, bounded feedback loops, and evidence-based stop rules.
-tags:
-  - goals
-  - agents
-  - orchestration
-  - antidrift
-  - checkpoints
----
+# Policy | Goal Execution Governance
 
 ## Policy
 
@@ -65,6 +55,11 @@ tags:
   risky mutation, independent audit, human gate, or closeout. Record owned
   changes, validation evidence, state transitions, remaining criteria, and the
   next ready unit or exact stop reason in a durable repo artifact.
+- Stop autonomous execution when any configured drift guard fires, including:
+  repeated hardening without outcome movement; repeated failure on the same
+  invariant; stale evidence being reused for a current claim; an oversized or
+  an unsafe or unowned dirty worktree; a required human/runtime/security gate;
+  or remaining work that is unbounded polish rather than goal capability.
 - A failed closed-world verification of an accepted blocking finding transitions
   the unit to split, reframe, block, or escalation; it does not silently reopen
   an unbounded review cycle.
@@ -103,11 +98,12 @@ runbook schemas repo-local.
 Use a machine-checkable repo-local section such as:
 
 ```text
+
 ## Local Goal Bounds
-max_work_unit_attempts: <positive integer>
-max_review_rework_cycles: <positive integer>
-max_hardening_checkpoints: <positive integer>
-checkpoint_interval: <positive integer> <minutes|slices|tokens>
+max_work_unit_attempts: 2
+max_review_rework_cycles: 1
+max_hardening_checkpoints: 2
+checkpoint_interval: 1 slices
 authorization_gate: significant_departure_only
 retry_budget_mode: renewable_execution_window
 review_discovery_passes: 1

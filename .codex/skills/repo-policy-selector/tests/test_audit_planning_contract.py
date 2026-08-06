@@ -65,12 +65,39 @@ class GoalExecutionContractAuditTests(unittest.TestCase):
                 max_review_rework_cycles: 1
                 max_hardening_checkpoints: 2
                 checkpoint_interval: 3 slices or 60 minutes
-                checkpoint_record_fields: plan_version, state_transition, progress_classification, evidence, subagent_status, next_action_or_stop_reason
+                authorization_gate: significant_departure_only
+                retry_budget_mode: renewable_execution_window
+                review_discovery_passes: 1
+                review_verification_mode: closed_world
+                review_finding_fields: criterion, evidence, consequence, reproducer, confidence, suggested_disposition
+                review_disposition_values: blocking | nonblocking_backlog | rejected | needs_evidence
+                checkpoint_record_fields: plan_version, state_transition, progress_classification, evidence, subagent_status, authority_classification, review_disposition_summary, next_action_or_stop_reason
             """)
         )
 
         self.assertTrue(report["applicable"])
         self.assertTrue(report["ok"], report["problems"])
+
+    def test_goal_contract_requires_authority_and_review_convergence_controls(self):
+        report = self.audit.audit_goal_execution_contract(
+            self.make_repo("""
+                # Policy | Goal Execution Governance
+
+                ## Local Goal Bounds
+
+                max_work_unit_attempts: 2
+                max_review_rework_cycles: 1
+                max_hardening_checkpoints: 2
+                checkpoint_interval: 3 slices or 60 minutes
+                checkpoint_record_fields: plan_version, state_transition, progress_classification, evidence, subagent_status, next_action_or_stop_reason
+            """)
+        )
+
+        self.assertFalse(report["ok"])
+        self.assertTrue(any("authorization_gate" in problem for problem in report["problems"]))
+        self.assertTrue(any("review_verification_mode" in problem for problem in report["problems"]))
+        self.assertTrue(any("suggested_disposition" in problem for problem in report["problems"]))
+        self.assertTrue(any("nonblocking_backlog" in problem for problem in report["problems"]))
 
 
 class PlanningContractAuditTests(unittest.TestCase):

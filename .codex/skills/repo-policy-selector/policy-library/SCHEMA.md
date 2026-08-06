@@ -58,6 +58,10 @@ Execution-bias vocabulary:
 
 ## Planning Contract
 
+Every starter profile adopts bounded planning discipline. The amount of
+ceremony remains proportional: trivial one-step work does not require a plan,
+while substantive, multi-file, multi-step, risky, or resumable work does.
+
 For repos that adopt bounded planning discipline:
 
 - actionable plans should live under `docs/dev/plans/` unless the repo has a clearly documented alternate location
@@ -148,6 +152,8 @@ overrides:
 
 Rules:
 - profiles compose modules; they should not duplicate module prose
+- every starter profile should include `planning-discipline`; stricter
+  `roadmap-runbook-governance` remains optional and purpose-specific
 - `overrides` are hints for the selector/adopter, not a second prose policy layer
 - profile ids should reflect repo archetypes, not one named repository
 - profiles should declare their intended `repo_purpose`
@@ -259,8 +265,14 @@ reusable policy themes include:
 
 - a stable goal objective plus high-level milestone/campaign plan
 - just-in-time bounded execution packets rather than premature low-level plans
+- standing authority for in-envelope continuation, with new approval limited to
+  significant departures and pre-existing human/live/private/security gates
 - explicit states, dependencies, joins, bounded feedback cycles, and terminal outcomes
-- automatic delegation decisions and fresh-context worker/auditor roles
+- automatic delegation decisions and calibrated fresh-context worker/auditor roles
+- one broad drift-discovery pass followed by primary adjudication and
+  closed-world verification of accepted findings
+- evidence-shaped review findings, explicit dispositions, and goal-level review
+  budgets that survive plan versions and successor packets
 - checkpointed evidence, progress classification, convergence guards, and
   deterministic stop or escalation conditions
 

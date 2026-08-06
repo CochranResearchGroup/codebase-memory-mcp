@@ -307,15 +307,27 @@ def semantic_module_matches(
     local_policy_texts = {
         path: semantic_policy_text(text) for path, text in local_texts.items()
     }
+    local_headings = {
+        path: next(
+            (
+                line.lstrip("#").strip().lower()
+                for line in text.splitlines()
+                if line.startswith("#")
+            ),
+            "",
+        )
+        for path, text in local_policy_texts.items()
+    }
     local_tokens = {path: tokenize(text) for path, text in local_policy_texts.items()}
     explicit_match_paths: dict[str, set[str]] = {path: set() for path in local_texts}
     for module_id, module in installed_library.get("parsed_modules", {}).items():
         title = module.get("title", "")
         for path_str, text in local_policy_texts.items():
             lower_text = text.lower()
+            heading = local_headings[path_str]
             if module_id == "notes-and-memories":
                 if (
-                    (module_id in lower_text or (isinstance(title, str) and title and title.lower() in lower_text))
+                    (module_id in heading or (isinstance(title, str) and title and title.lower() in heading))
                     and "docs/dev/notes" in lower_text
                     and "docs/dev/memories" in lower_text
                     and any(
@@ -332,7 +344,7 @@ def semantic_module_matches(
                 ):
                     explicit_match_paths[path_str].add(module_id)
                 continue
-            if module_id in lower_text or (isinstance(title, str) and title and title.lower() in lower_text):
+            if module_id in heading or (isinstance(title, str) and title and title.lower() in heading):
                 explicit_match_paths[path_str].add(module_id)
     matches: dict[str, list[str]] = {}
     for module_id, module in installed_library.get("parsed_modules", {}).items():
@@ -343,6 +355,7 @@ def semantic_module_matches(
         scored_matches: list[tuple[int, str]] = []
         for path_str, text in local_policy_texts.items():
             lower_text = text.lower()
+            heading = local_headings[path_str]
             title = module.get("title", "")
             if (
                 module_id == "notes-and-memories"
@@ -365,7 +378,7 @@ def semantic_module_matches(
             ):
                 scored_matches.append((100, path_str))
                 continue
-            if module_id in lower_text or (isinstance(title, str) and title and title.lower() in lower_text):
+            if module_id in heading or (isinstance(title, str) and title and title.lower() in heading):
                 scored_matches.append((100, path_str))
                 continue
             if explicit_match_paths[path_str]:
@@ -483,10 +496,7 @@ def semantic_module_matches(
                     "previews" in lower_text
                     or "preview service" in lower_text
                     or "preview session" in lower_text
-                    or "browser review" in lower_text
-                    or "review packet" in lower_text
-                    or "approval packet" in lower_text
-                    or "artifact review" in lower_text
+                    or "session url" in lower_text
                 )
                 and any(
                     token in lower_text
@@ -504,6 +514,36 @@ def semantic_module_matches(
                         "html",
                         "screenshots",
                         "galleries",
+                    ]
+                )
+            ):
+                scored_matches.append((85, path_str))
+                continue
+            if (
+                module_id == "policy-harvest-loop"
+                and "harvest loop" in heading
+            ):
+                scored_matches.append((85, path_str))
+                continue
+            if (
+                module_id == "policy-adoption-feedback-loop"
+                and any(
+                    phrase in lower_text
+                    for phrase in [
+                        "policy adoption",
+                        "policy upgrade",
+                        "installed policy bundle",
+                        "selected profile",
+                    ]
+                )
+                and any(
+                    phrase in lower_text
+                    for phrase in [
+                        "feedback artifact",
+                        "dated feedback",
+                        "what worked",
+                        "created friction",
+                        "adoption lessons",
                     ]
                 )
             ):
@@ -535,6 +575,15 @@ def semantic_module_matches(
                 )
             ):
                 scored_matches.append((85, path_str))
+                continue
+            if module_id in {
+                "codegraph-usage",
+                "graph-backed-memory-usage",
+                "memory-service-runtime-governance",
+                "policy-adoption-feedback-loop",
+                "policy-harvest-loop",
+                "preview-artifact-review",
+            }:
                 continue
             overlap = signature & local_tokens[path_str]
             anchor_overlap = anchors & local_tokens[path_str]
@@ -966,6 +1015,62 @@ def detect_signals(repo_root: Path) -> dict:
     entrypoint_text = agents_entry_text.lower()
     semantic_text = "\n".join([entrypoint_text, readme.lower(), course_config_text, top_level_names])
     combined = "\n".join([text, readme.lower(), runbook_text.lower(), actionable_plan.lower(), course_config_text, top_level_names])
+    memory_runtime_subject = any(
+        phrase in combined or phrase in semantic_text
+        for phrase in [
+            "memory service runtime",
+            "memory-service runtime",
+            "mcp memory server",
+            "graphiti mcp server",
+            "installed memory service",
+        ]
+    )
+    memory_runtime_operation = any(
+        phrase in combined or phrase in semantic_text
+        for phrase in [
+            "memory queue",
+            "memory job",
+            "dead-letter memory",
+            "dead letter memory",
+            "get_memory_queue_status",
+            "memory service health",
+            "read-after-write smoke",
+            "graphiti-openclaw smoke",
+            "provider boundary",
+            "embedding provider",
+            "service manager",
+            "runtime home",
+        ]
+    )
+    preview_channel = any(
+        phrase in combined or phrase in semantic_text
+        for phrase in [
+            "previews skill",
+            "$previews",
+            "preview service",
+            "preview session",
+            "preview url",
+            "publish_session",
+            "publish preview",
+        ]
+    )
+    preview_review_workflow = any(
+        phrase in combined or phrase in semantic_text
+        for phrase in [
+            "browser review",
+            "browser-based review",
+            "review packet",
+            "approval packet",
+            "artifact review",
+            "approval feedback",
+            "human approval",
+            "human review",
+            "rendered document",
+            "office documents",
+            "image gallery",
+            "galleries",
+        ]
+    )
     repo_path = str(repo_root).lower()
     has_explicit_goal_command = "/goal" in combined
     has_agentic_goal_context = any(
@@ -1175,27 +1280,7 @@ def detect_signals(repo_root: Path) -> dict:
                 "refactor planning",
             ]
         ),
-        "mentions_memory_service_runtime": any(
-            phrase in combined or phrase in semantic_text
-            for phrase in [
-                "memory service runtime",
-                "memory-service runtime",
-                "mcp memory server",
-                "graphiti mcp server",
-                "memory queue",
-                "memory job",
-                "dead-letter memory",
-                "dead letter memory",
-                "get_memory_queue_status",
-                "installed memory service",
-                "memory service health",
-                "read-after-write smoke",
-                "graphiti-openclaw smoke",
-                "provider boundary",
-                "embedding provider",
-                "installed release",
-            ]
-        ),
+        "mentions_memory_service_runtime": memory_runtime_subject and memory_runtime_operation,
         "mentions_architecture_guardrails": any(
             phrase in semantic_text
             for phrase in [
@@ -1352,33 +1437,7 @@ def detect_signals(repo_root: Path) -> dict:
                 "post-release live verification",
             ]
         ),
-        "mentions_preview_artifact_review": any(
-            phrase in semantic_text or phrase in combined
-            for phrase in [
-                "previews skill",
-                "$previews",
-                "preview service",
-                "preview session",
-                "preview url",
-                "browser review",
-                "browser-based review",
-                "review packet",
-                "approval packet",
-                "artifact review",
-                "local artifacts",
-                "generated artifacts",
-                "publish_session",
-                "publish preview",
-                "approval feedback",
-                "human approval",
-                "human review",
-                "rendered document",
-                "rendered documents",
-                "office documents",
-                "image gallery",
-                "galleries",
-            ]
-        ),
+        "mentions_preview_artifact_review": preview_channel and preview_review_workflow,
         "mentions_tenant_runtime": any(
             phrase in semantic_text
             for phrase in [
@@ -1728,10 +1787,11 @@ def policy_adoption_coverage(
     )
     adopted_set = set(canonical_ids) | set(semantically_adopted)
     already_adopted = [module_id for module_id in recommended_modules if module_id in adopted_set]
-    missing = [module_id for module_id in recommended_modules if module_id not in canonical_ids]
     missing = [module_id for module_id in recommended_modules if module_id not in adopted_set]
     if not recommended_modules:
         readiness = "fresh-adoption"
+    elif len(already_adopted) == len(recommended_modules):
+        readiness = "fully-installed"
     else:
         ratio = len(already_adopted) / len(recommended_modules)
         if ratio >= 0.75:
@@ -1755,6 +1815,8 @@ def policy_adoption_coverage(
 
 def recommendation_mode(coverage: dict[str, Any]) -> str:
     readiness = coverage["readiness"]
+    if readiness == "fully-installed":
+        return "already-aligned"
     if readiness in {"partial-local-policy", "mostly-installed"}:
         return "patch-missing"
     return "full-profile"

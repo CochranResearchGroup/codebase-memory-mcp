@@ -106,6 +106,77 @@ class SelectPolicyRegressionTests(unittest.TestCase):
             modules = self.select_policy.base_modules_for_profile(profile_id, installed_library)
             self.assertIn("graph-backed-memory-usage", modules, profile_id)
 
+    def test_planning_discipline_is_in_every_starter_profile(self):
+        installed_library = self.select_policy.enumerate_policy_library(self.policy_root)
+        for profile_id in installed_library["profile_ids"]:
+            modules = self.select_policy.base_modules_for_profile(profile_id, installed_library)
+            self.assertIn("planning-discipline", modules, profile_id)
+
+    def test_complete_policy_coverage_reports_already_aligned(self):
+        repo_root = self.make_repo()
+        policy_dir = repo_root / "docs" / "dev" / "policies"
+        policy_dir.mkdir(parents=True, exist_ok=True)
+        installed_library = self.select_policy.enumerate_policy_library(self.policy_root)
+        modules = self.select_policy.base_modules_for_profile("standalone-library", installed_library)
+        for index, module_id in enumerate(modules, start=1):
+            (policy_dir / f"{index:04d}-{module_id}.md").write_text(
+                f"# Policy | {module_id}\n\n## Policy\n\n- Adopted.\n",
+                encoding="utf-8",
+            )
+
+        surfaces = self.select_policy.extract_existing_policy_surfaces(repo_root)
+        coverage = self.select_policy.policy_adoption_coverage(surfaces, modules, installed_library)
+
+        self.assertEqual(coverage["readiness"], "fully-installed")
+        self.assertEqual(coverage["missing_recommended_modules"], [])
+        self.assertEqual(self.select_policy.recommendation_mode(coverage), "already-aligned")
+
+    def test_harvest_policy_does_not_semantically_adopt_feedback_or_preview_policy(self):
+        repo_root = self.make_repo()
+        policy_dir = repo_root / "docs" / "dev" / "policies"
+        policy_dir.mkdir(parents=True, exist_ok=True)
+        (policy_dir / "0002-policy-harvest-loop.md").write_text(
+            textwrap.dedent(
+                """
+                # Policy | Harvest Loop
+
+                ## Policy
+
+                - Assess available, adopted, and evidenced policy separately.
+                - Review generated artifacts and feedback before changing shared policy.
+                - Record reusable findings from sibling-repo surveys.
+                """
+            ).strip()
+            + "\n",
+            encoding="utf-8",
+        )
+
+        installed_library = self.select_policy.enumerate_policy_library(self.policy_root)
+        surfaces = self.select_policy.extract_existing_policy_surfaces(repo_root)
+        semantic_matches = self.select_policy.semantic_module_matches(surfaces, installed_library)
+
+        self.assertEqual(
+            semantic_matches["policy-harvest-loop"],
+            [str(policy_dir / "0002-policy-harvest-loop.md")],
+        )
+        self.assertNotIn("policy-adoption-feedback-loop", semantic_matches)
+        self.assertNotIn("preview-artifact-review", semantic_matches)
+
+    def test_memory_consumer_language_does_not_imply_runtime_operations(self):
+        repo_root = self.make_repo(
+            agents_text="""
+            # Graph Memory Consumer
+
+            Use graphiti-discovery for durable memory reads. Treat memory as
+            advisory and verify it against repo evidence.
+            """,
+        )
+
+        signals = self.select_policy.detect_signals(repo_root)
+
+        self.assertTrue(signals["mentions_graph_backed_memory"])
+        self.assertFalse(signals["mentions_memory_service_runtime"])
+
     def test_goal_language_recommends_goal_and_subagent_governance(self):
         repo_root = self.make_repo(
             agents_text="""

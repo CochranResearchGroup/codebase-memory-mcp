@@ -43,6 +43,8 @@ Read and follow:
 - `docs/dev/policies/0015-subagent-runtime-governance.md`
 - `docs/dev/policies/0016-upstream-fork-maintenance.md`
 - `docs/dev/policies/0017-workspace-auto-index-governance.md`
+- `docs/dev/policies/0018-goal-execution-governance.md`
+- `docs/dev/policies/0019-notes-and-memories.md`
 
 ## Scope
 

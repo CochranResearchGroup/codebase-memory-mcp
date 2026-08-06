@@ -6,6 +6,10 @@ Recommend the best starter policy profile and module composition for a target re
 
 Selection is purpose-aware. Do not choose a profile until you have an explicit or inferred repo purpose.
 
+Bounded planning discipline is a universal starter-profile baseline. Keep its
+ceremony proportional to the work, and do not infer that every repo needs a
+`ROADMAP.md` or `RUNBOOK.md`.
+
 Installation, policy enumeration, and downstream repo wiring should be deterministic.
 
 ## Installation first
@@ -49,6 +53,8 @@ Treat `AGENTS.md` as a policy-loading contract, not just a static pointer:
 ## Look for these signals
 
 - roadmap/runbook discipline
+- bounded plan discipline, including lightweight plans for substantive work in
+  repos without roadmap/runbook authorities
 - cluttered or legacy planning surfaces that need migration into canonical files
 - cluttered or legacy notes/memories that need migration into canonical directories
 - multiple active lanes
@@ -104,6 +110,10 @@ For long-running goal execution, prioritize explicit signals such as:
 - goal checkpoints, acceptance-progress classification, convergence guards, or
   repeated-hardening stop rules
 - high-level campaign plans that derive bounded execution packets over time
+- standing authority, significant-departure approval gates, renewable execution
+  windows, or complaints about repeated in-envelope approval stops
+- fresh-context drift review, accepted finding ledgers, primary adjudication, or
+  closed-world remediation verification
 
 Recommend `goal-execution-governance` and
 `subagent-workflow-optimization`, `parallel-plan-design`, and
@@ -150,7 +160,8 @@ Return:
 - inferred `execution_bias` when applicable
 - recommended profile
 - recommended modules
-- recommendation mode such as `full-profile` or `patch-missing`
+- recommendation mode such as `full-profile`, `patch-missing`, or
+  `already-aligned`
 - next modules to add when the repo already partially matches the selected profile
 - deterministic install-plan entries with target local policy paths and rendered draft content
 - an `AGENTS.md` wire-in patch for the planned policy set
@@ -176,8 +187,12 @@ When `goal-execution-governance` is adopted, run:
 python scripts/audit_planning_contract.py --repo-root /path/to/repo --goal-only --json
 ```
 
-Do not call goal-policy adoption complete until concrete local bounds and the
-checkpoint-record field contract pass this audit.
+Do not call goal-policy adoption complete until concrete local bounds,
+significant-departure standing authority, renewable execution windows, one
+goal-level review-discovery pass, closed-world verification, evidence-shaped
+finding fields, dispositions, and the checkpoint-record contract pass this
+audit. Treat packet bounds as convergence controls rather than expiring goal
+approval.
 
 The normal planning audit is applicability-aware. It enforces
 `planning-discipline` only when that policy is adopted, and only requires

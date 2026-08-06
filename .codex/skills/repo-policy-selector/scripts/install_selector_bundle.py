@@ -72,8 +72,8 @@ def run_installed_adopt(
     return payload if isinstance(payload, dict) else {}
 
 
-def write_install_record(target_repo_root: Path, record: dict[str, Any]) -> Path:
-    record_path = target_repo_root / INSTALL_RECORD_RELPATH
+def write_install_record(target_repo_root: Path, record: dict[str, Any], install_record_relpath: str = INSTALL_RECORD_RELPATH) -> Path:
+    record_path = target_repo_root / install_record_relpath
     record_path.parent.mkdir(parents=True, exist_ok=True)
     record_path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return record_path
@@ -87,6 +87,7 @@ def install_selector_bundle(
     selector_subdir: str,
     target_repo_root: Path,
     install_relpath: str,
+    install_record_relpath: str = INSTALL_RECORD_RELPATH,
     force: bool,
     write_drafts: bool,
 ) -> dict[str, Any]:
@@ -124,7 +125,7 @@ def install_selector_bundle(
             "installed_policy_root": str(install_root / "policy-library"),
             "installed_bundle_release": manifest,
         }
-        install_record_path = write_install_record(target_repo_root, install_record)
+        install_record_path = write_install_record(target_repo_root, install_record, install_record_relpath)
         return {
             "target_repo_root": str(target_repo_root),
             "installed_selector_root": str(install_root),
@@ -149,6 +150,7 @@ def main() -> int:
     parser.add_argument("--selector-subdir", default="repo-policy-selector")
     parser.add_argument("--target-repo-root", required=True)
     parser.add_argument("--install-relpath", default=".codex/skills/repo-policy-selector")
+    parser.add_argument("--install-record-relpath", default=INSTALL_RECORD_RELPATH)
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--write-drafts", action="store_true")
     parser.add_argument("--json", action="store_true")
@@ -162,6 +164,7 @@ def main() -> int:
         selector_subdir=args.selector_subdir,
         target_repo_root=Path(args.target_repo_root).resolve(),
         install_relpath=args.install_relpath,
+        install_record_relpath=args.install_record_relpath,
         force=args.force,
         write_drafts=args.write_drafts,
     )
