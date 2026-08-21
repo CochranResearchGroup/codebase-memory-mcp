@@ -63,7 +63,8 @@ Read and follow:
 - `docs/dev/policies/0035-validation-and-handoff.md`
 - `docs/dev/policies/0036-subagent-runtime-governance.md`
 - `docs/dev/policies/0037-notes-and-memories.md`
-- `docs/dev/policies/0038-upstream-fork-maintenance.md`
+- `docs/dev/policies/0038-active-lane-coordination.md`
+- `docs/dev/policies/0039-upstream-fork-maintenance.md`
 
 ## Scope
 
