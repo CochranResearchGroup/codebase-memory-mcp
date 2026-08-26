@@ -46,6 +46,27 @@ Read and follow:
 - `docs/dev/policies/0018-goal-execution-governance.md`
 - `docs/dev/policies/0019-notes-and-memories.md`
 - `docs/dev/policies/0020-code-testing-discipline.md`
+- `docs/dev/policies/0021-policy-management.md`
+- `docs/dev/policies/0022-policy-upgrade-management.md`
+- `docs/dev/policies/0023-policy-adoption-feedback-loop.md`
+- `docs/dev/policies/0024-graph-backed-memory-usage.md`
+- `docs/dev/policies/0025-planning-discipline.md`
+- `docs/dev/policies/0026-codegraph-usage.md`
+- `docs/dev/policies/0027-code-testing-discipline.md`
+- `docs/dev/policies/0028-git-worktree-hygiene.md`
+- `docs/dev/policies/0029-commit-history-discipline.md`
+- `docs/dev/policies/0030-branch-and-integration-strategy.md`
+- `docs/dev/policies/0031-commit-and-push-cadence.md`
+- `docs/dev/policies/0032-versioning-and-release.md`
+- `docs/dev/policies/0033-turn-closeout.md`
+- `docs/dev/policies/0034-goal-execution-governance.md`
+- `docs/dev/policies/0035-subagent-workflow-optimization.md`
+- `docs/dev/policies/0036-parallel-plan-design.md`
+- `docs/dev/policies/0037-validation-and-handoff.md`
+- `docs/dev/policies/0038-subagent-runtime-governance.md`
+- `docs/dev/policies/0039-notes-and-memories.md`
+- `docs/dev/policies/0040-active-lane-coordination.md`
+- `docs/dev/policies/0041-upstream-fork-maintenance.md`
 
 ## Scope
 
