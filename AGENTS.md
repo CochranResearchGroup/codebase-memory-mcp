@@ -47,6 +47,8 @@ Read and follow:
 - `docs/dev/policies/0019-notes-and-memories.md`
 - `docs/dev/policies/0020-code-testing-discipline.md`
 - `docs/dev/policies/0021-model-selection-and-calibration.md`
+- `docs/dev/policies/0022-work-item-traceability.md`
+- `docs/dev/policies/0023-collaborative-development-workflow.md`
 
 ## Scope
 
