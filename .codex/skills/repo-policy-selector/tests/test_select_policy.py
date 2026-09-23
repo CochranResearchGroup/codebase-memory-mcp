@@ -674,9 +674,11 @@ class SelectPolicyRegressionTests(unittest.TestCase):
         installed_library = self.select_policy.enumerate_policy_library(self.policy_root)
         body = installed_library["parsed_modules"]["codegraph-usage"]["body"]
 
-        self.assertIn("missing index in a verified local worktree", body)
-        self.assertIn("Do not require a fresh approval solely because the worktree is new", body)
+        self.assertIn("Whenever codegraph is needed for the task", body)
+        self.assertIn("the repository has not been initialized before", body)
+        self.assertIn("do not require separate approval solely to initialize codegraph", body)
         self.assertIn("run the documented explicit sync once", body)
+        self.assertNotIn("codegraph has not been established for the repo", body)
         self.assertIn("unexpected tracked-file changes", body)
 
     def test_graphiti_runtime_policy_maps_to_memory_service_runtime_module(self):

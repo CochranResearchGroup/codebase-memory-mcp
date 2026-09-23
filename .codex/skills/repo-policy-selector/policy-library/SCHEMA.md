@@ -467,7 +467,7 @@ For repos that contain code and have an indexed codegraph available, likely reus
 - consulting codegraph before non-trivial code edits, architecture claims, trace analysis, or refactor planning
 - using structural queries such as context, trace, callers, callees, impact, and indexed file listings before broad manual search loops
 - treating codegraph output as discovery evidence that still requires source reads and tests
-- treating fresh-worktree initialization as routine local derived-state maintenance when the repo already establishes codegraph as expected
+- permitting initialization whenever codegraph is necessary and the intended repository or worktree root is verified, including first-time initialization and fresh worktrees
 - distinguishing a watched active checkout from explicit-path projects and fresh worktrees that may require an explicit sync
 - checking status after edits and performing one explicit sync when the index is stale, pending, unwatched, or auto-sync is disabled
 - keeping exact sibling checkout paths, MCP tool names, service repair, and project-specific index exclusions repo-local
