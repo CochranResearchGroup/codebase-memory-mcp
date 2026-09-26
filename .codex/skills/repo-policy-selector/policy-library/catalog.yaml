@@ -8,6 +8,11 @@ modules:
   - id: policy-adoption-feedback-loop
     path: modules/policy-adoption-feedback-loop.md
     tags: [policy, feedback, upgrades, notes]
+  - id: policy-context-pilot
+    path: modules/policy-context-pilot.md
+    category: pilots
+    status: pilot
+    tags: [pilots, policy, mcp, context, measurement]
   - id: notes-and-memories
     path: modules/notes-and-memories.md
     tags: [notes, memories, continuity, governance]

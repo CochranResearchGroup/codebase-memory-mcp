@@ -87,6 +87,13 @@ Treat `AGENTS.md` as a policy-loading contract, not just a static pointer:
   self-managed hosts, owned forks, or permissioned upstreams
 - whether multiple human contributors or agents acting for different people
   share branches, worktrees, pull requests, reviews, or deployment authority
+- whether the repo explicitly wires a policy-context pilot through a
+  `.governance/policy-context.json` manifest or `gov_policy` MCP call
+
+Pilot modules are custom-composition candidates. Recommend them only from the
+module's narrow affirmative signals, report their pilot status, and do not add
+them to starter profiles merely because a repo uses MCP or mentions token
+efficiency.
 
 For collaborative development, require both contributor signals and workflow
 signals so incidental uses of words such as "collaborate" do not add team

@@ -1025,6 +1025,7 @@ def detect_signals(repo_root: Path) -> dict:
     has_catalog = (repo_root / "catalog.yaml").exists()
     has_selector_bundle = (repo_root / "repo-policy-selector").exists()
     has_local_harvester = (repo_root / ".codex" / "skills" / "repo-policy-harvester").exists()
+    has_policy_context_manifest = (repo_root / ".governance" / "policy-context.json").is_file()
     git_dir = repo_root / ".git"
     git_config = read_text(git_dir / "config").lower() if git_dir.is_dir() else read_text(git_dir).lower()
     top_level_files = [child for child in repo_root.iterdir() if child.is_file()]
@@ -1168,6 +1169,7 @@ def detect_signals(repo_root: Path) -> dict:
         "has_catalog": has_catalog,
         "has_selector_bundle": has_selector_bundle,
         "has_local_harvester": has_local_harvester,
+        "has_policy_context_manifest": has_policy_context_manifest,
         "has_plans_dir": clutter["has_plans_dir"],
         "has_notes_dir": clutter["has_notes_dir"],
         "has_memories_dir": clutter["has_memories_dir"],
@@ -1366,6 +1368,15 @@ def detect_signals(repo_root: Path) -> dict:
         ),
         "mentions_closeout": "closeout" in text or "best recommendation" in text,
         "mentions_policy_harvest": "policy" in semantic_text and "harvest" in semantic_text,
+        "mentions_policy_context_pilot": has_policy_context_manifest or any(
+            phrase in semantic_text
+            for phrase in [
+                "gov_policy",
+                "policy context pilot",
+                "policy-context pilot",
+                "policy context manifest",
+            ]
+        ),
         "mentions_policy_library": any(
             phrase in semantic_text
             for phrase in [
@@ -2297,6 +2308,9 @@ def choose_profile(signals: dict, installed_library: dict[str, Any]) -> tuple[st
     if signals["mentions_policy_harvest"] and "policy-harvest-loop" not in modules:
         modules.append("policy-harvest-loop")
         reasons.append("repo language suggests reusable policy harvesting")
+    if signals["mentions_policy_context_pilot"] and "policy-context-pilot" not in modules:
+        modules.append("policy-context-pilot")
+        reasons.append("repo has an explicit policy-context manifest or gov_policy pilot wiring")
     if signals["mentions_git_policy"]:
         for module_id in (
             "git-worktree-hygiene",

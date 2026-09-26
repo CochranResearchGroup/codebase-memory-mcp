@@ -13,6 +13,19 @@ There are three first-class objects:
 Repo-local `AGENTS.md` files are downstream entrypoints, not objects in this repo.
 The adopted repo-local policy should live under `docs/dev/policies/` and be wired in from `AGENTS.md`.
 
+## Module Lifecycle Metadata
+
+Modules may declare optional `category` and `status` fields in both module
+frontmatter and the catalog. The initial lifecycle vocabulary is:
+
+- `category: pilots`
+- `status: pilot`
+
+A pilot module is opt-in and must not appear in a starter profile unless a
+later evidence-backed review promotes it. Selector logic may recommend a pilot
+only from narrow, affirmative repository signals. Pilot policy must define its
+validation, measurement, fallback, and removal conditions.
+
 ## Repo Purpose And Workflow Subtype
 
 Policy selection is purpose-aware.

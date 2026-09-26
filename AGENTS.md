@@ -51,6 +51,32 @@ Read and follow:
 - `docs/dev/policies/0023-collaborative-development-workflow.md`
 - `docs/dev/policies/0024-forge-issue-reporting.md`
 - `docs/dev/policies/0025-github-issue-operations.md`
+- `docs/dev/policies/0026-policy-management.md`
+- `docs/dev/policies/0027-policy-upgrade-management.md`
+- `docs/dev/policies/0028-policy-adoption-feedback-loop.md`
+- `docs/dev/policies/0029-graph-backed-memory-usage.md`
+- `docs/dev/policies/0030-planning-discipline.md`
+- `docs/dev/policies/0031-model-selection-and-calibration.md`
+- `docs/dev/policies/0032-codegraph-usage.md`
+- `docs/dev/policies/0033-code-testing-discipline.md`
+- `docs/dev/policies/0034-git-worktree-hygiene.md`
+- `docs/dev/policies/0035-commit-history-discipline.md`
+- `docs/dev/policies/0036-branch-and-integration-strategy.md`
+- `docs/dev/policies/0037-commit-and-push-cadence.md`
+- `docs/dev/policies/0038-versioning-and-release.md`
+- `docs/dev/policies/0039-turn-closeout.md`
+- `docs/dev/policies/0040-goal-execution-governance.md`
+- `docs/dev/policies/0041-subagent-workflow-optimization.md`
+- `docs/dev/policies/0042-parallel-plan-design.md`
+- `docs/dev/policies/0043-validation-and-handoff.md`
+- `docs/dev/policies/0044-subagent-runtime-governance.md`
+- `docs/dev/policies/0045-notes-and-memories.md`
+- `docs/dev/policies/0046-active-lane-coordination.md`
+- `docs/dev/policies/0047-work-item-traceability.md`
+- `docs/dev/policies/0048-collaborative-development-workflow.md`
+- `docs/dev/policies/0049-forge-issue-reporting.md`
+- `docs/dev/policies/0050-github-issue-operations.md`
+- `docs/dev/policies/0051-upstream-fork-maintenance.md`
 
 ## Scope
 
