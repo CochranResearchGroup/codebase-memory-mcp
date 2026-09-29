@@ -32,6 +32,27 @@
 - Query the repo-named memory group first when repo policy names one.
 - When the right memory group is unclear, or when the task crosses repos, tenants, or domains, query a reviewed atlas or routing layer first and inspect retrieval, privacy, export, and audience policy before descending into source groups.
 - Prefer compact, factual, retrieval-friendly writes over conversational filler or repeated paraphrases of the same fact.
+- Admit only durable, atomic, source-anchored material with an explicit audience
+  and sensitivity classification. Project activity is an observation; it does
+  not prove operator importance, belief, identity, or intent. Personal
+  interpretations require explicit operator confirmation before personalization.
+- Keep current source systems authoritative for current state, repo notes and
+  receipts authoritative for auditable continuity, curated agent memory useful
+  for compact startup guidance, and graph memory useful for source-linked
+  temporal facts and relationships. Preserve contradictions and correction
+  history rather than silently replacing evidence.
+- At substantive closeout, record exactly one memory disposition: `queued`,
+  `duplicate_noop`, `not_durable`, `forbidden`, or `unavailable`. Explain a
+  non-write disposition; do not treat silence as a decision.
+- For asynchronous writes, queue acceptance is not persistence. Preserve a
+  provenance receipt with group, stable name, source locator, timestamps,
+  warnings, and job or episode identity, without copying the memory body.
+  Ordinary closeout may proceed after submission. Require terminal persistence
+  and readback only when the workflow explicitly needs read-after-write proof.
+- Reconcile queued writes before a related write or when later work needs the
+  memory. After an ambiguous submission response, reconcile the recorded job
+  or exact source metadata before retrying. Size warnings require smaller
+  atomic episodes rather than unchecked resubmission.
 - Avoid memory spam:
   - do not write the same preference or project fact every turn
   - prefer one good durable memory over many near-duplicate entries
